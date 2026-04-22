@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========================================
+   BASE OVERRIDES
+======================================== */
+@layer base {
+  html, body {
+    @apply bg-bg-base text-text-primary font-body;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: radial-gradient(ellipse at top, #1a0f0c 0%, #0A0908 50%) fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Subtle grain texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.035;
+    z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.8'/%3E%3C/svg%3E");
+  }
+
+  /* Remove tap delay & blue highlight on mobile */
+  button, input, a { -webkit-tap-highlight-color: transparent; }
+
+  /* Scrollbars : invisible mais natifs */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+}
+
+/* ========================================
+   CUSTOM UTILITIES
+======================================== */
+@layer utilities {
+  .text-heat-gradient {
+    background: linear-gradient(135deg, #FFAA33 0%, #FF4D00 50%, #FF1744 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .safe-pt { padding-top: max(env(safe-area-inset-top), 16px); }
+  .safe-pb { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
+/* ========================================
+   KEYFRAMES
+======================================== */
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-circumference, 615); }
+  to   { stroke-dashoffset: var(--ring-target, 0); }
+}
+
+@keyframes bar-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-ring-fill { animation: ring-fill 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-bar-fill  { animation: bar-fill 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; transform-origin: left center; }
+.animate-fade-up   { animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fade-in   { animation: fade-in 0.3s ease-out forwards; }
