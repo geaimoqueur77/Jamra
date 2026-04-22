@@ -19,6 +19,8 @@ import {
   pushAliments,
   pushConsommations,
   pushPesees,
+  pushTrainingPlans,
+  pushTrainingSessions,
   pushDeletions,
 } from './push';
 import {
@@ -26,6 +28,8 @@ import {
   pullAliments,
   pullConsommations,
   pullPesees,
+  pullTrainingPlans,
+  pullTrainingSessions,
 } from './pull';
 
 // État interne
@@ -61,7 +65,7 @@ export function subscribeSync(listener) {
 // ==========================================================================
 
 async function computePendingCount() {
-  const tables = [db.profil, db.aliments, db.consommations, db.pesees, db.repasTypes, db.repasTypeItems];
+  const tables = [db.profil, db.aliments, db.consommations, db.pesees, db.repasTypes, db.repasTypeItems, db.training_plans, db.training_sessions];
   let total = 0;
   for (const t of tables) {
     total += await t.filter(r => r.needs_sync === true && r.source !== 'ciqual').count();
@@ -105,14 +109,18 @@ export async function fullSync() {
 
   try {
     // 1. PUSH
-    // Ordre important : profil → aliments → consommations → pesees → deletions
-    // (les consommations dépendent des aliments pour leur FK remote_id)
+    // Ordre important : profil → aliments → consommations → pesees → training_plans → sessions → deletions
+    // (les consommations dépendent des aliments, les sessions dépendent des plans)
     await pushProfile(state.userId);
     await pushAliments(state.userId);
     // Deuxième passe nécessaire si des consommations dépendent d'aliments fraîchement pushés
     await pushConsommations(state.userId);
     await pushConsommations(state.userId);
     await pushPesees(state.userId);
+    await pushTrainingPlans(state.userId);
+    // Les sessions peuvent dépendre d'un plan juste pushé
+    await pushTrainingSessions(state.userId);
+    await pushTrainingSessions(state.userId);
     await pushDeletions();
 
     // 2. PULL
@@ -120,6 +128,8 @@ export async function fullSync() {
     await pullAliments(state.userId);
     await pullConsommations(state.userId);
     await pullPesees(state.userId);
+    await pullTrainingPlans(state.userId);
+    await pullTrainingSessions(state.userId);
 
     setState({
       status: 'idle',

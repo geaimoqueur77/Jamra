@@ -16,6 +16,9 @@ import BarcodeScanner from './pages/BarcodeScanner';
 import CreateCustomFood from './pages/CreateCustomFood';
 import CopyMeal from './pages/CopyMeal';
 import Workspace from './pages/Workspace';
+import Training from './pages/Training';
+import TrainingPlanEditor from './pages/TrainingPlanEditor';
+import SessionDetail from './pages/SessionDetail';
 
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -106,6 +109,10 @@ export const router = createBrowserRouter([
           { path: '/creer-aliment', element: <CreateCustomFood /> },
           { path: '/copier-repas', element: <CopyMeal /> },
           { path: '/foyer', element: <Workspace /> },
+          // Training (Phase 5.B)
+          { path: '/entrainement', element: <Training /> },
+          { path: '/entrainement/config', element: <TrainingPlanEditor /> },
+          { path: '/entrainement/seance/:id', element: <SessionDetail /> },
         ],
       },
     ],

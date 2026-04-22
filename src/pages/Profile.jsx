@@ -210,6 +210,9 @@ export default function Profile() {
             </div>
           )}
           <div className="flex flex-col gap-2">
+            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/entrainement')}>
+              🏃 Mon entraînement
+            </Button>
             <Button variant="outline" size="md" fullWidth onClick={() => navigate('/foyer')}>
               🏠 Mon foyer
             </Button>

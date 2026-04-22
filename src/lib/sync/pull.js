@@ -19,6 +19,8 @@ import {
   alimentRemoteToLocal,
   consommationRemoteToLocal,
   peseeRemoteToLocal,
+  trainingPlanRemoteToLocal,
+  trainingSessionRemoteToLocal,
 } from './mappers';
 
 async function getLastPulled(key) {
@@ -181,5 +183,63 @@ export async function pullPesees(userId) {
   }
 
   await setLastPulled('pesees.last_pulled_at', maxUpdated);
+  return { count };
+}
+
+// ==========================================================================
+// PULL TRAINING PLANS
+// ==========================================================================
+
+export async function pullTrainingPlans(userId) {
+  const lastPulled = await getLastPulled('training_plans.last_pulled_at');
+
+  const { data, error } = await supabase
+    .from('training_plans')
+    .select('*')
+    .gt('updated_at', lastPulled);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return { count: 0 };
+
+  let count = 0;
+  let maxUpdated = lastPulled;
+
+  for (const remote of data) {
+    const localData = trainingPlanRemoteToLocal(remote);
+    const action = await mergeRemote(db.training_plans, remote.id, localData);
+    if (action !== 'skipped') count++;
+    if (remote.updated_at > maxUpdated) maxUpdated = remote.updated_at;
+  }
+
+  await setLastPulled('training_plans.last_pulled_at', maxUpdated);
+  return { count };
+}
+
+// ==========================================================================
+// PULL TRAINING SESSIONS
+// ==========================================================================
+
+export async function pullTrainingSessions(userId) {
+  const lastPulled = await getLastPulled('training_sessions.last_pulled_at');
+
+  const { data, error } = await supabase
+    .from('training_sessions')
+    .select('*')
+    .gt('updated_at', lastPulled);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return { count: 0 };
+
+  let count = 0;
+  let maxUpdated = lastPulled;
+
+  for (const remote of data) {
+    const localData = await trainingSessionRemoteToLocal(remote);
+    const action = await mergeRemote(db.training_sessions, remote.id, localData);
+    if (action !== 'skipped') count++;
+    if (remote.updated_at > maxUpdated) maxUpdated = remote.updated_at;
+  }
+
+  await setLastPulled('training_sessions.last_pulled_at', maxUpdated);
   return { count };
 }

@@ -52,6 +52,24 @@ db.version(2).stores({
   }
 });
 
+// ----------------------------------------------------------------------
+// v3 (Phase 5.B) — Coaching sportif
+// ----------------------------------------------------------------------
+db.version(3).stores({
+  profil:          '++id, remote_id, updated_at, needs_sync',
+  aliments:        '++id, source, source_id, nom, code_barres, is_favori, dernier_usage, nombre_usages, categorie, remote_id, updated_at, needs_sync',
+  consommations:   '++id, date, type_repas, aliment_id, [date+type_repas], remote_id, updated_at, needs_sync',
+  pesees:          '++id, &date, remote_id, updated_at, needs_sync',
+  repasTypes:      '++id, nom, nombre_usages, remote_id, updated_at, needs_sync',
+  repasTypeItems:  '++id, repas_type_id, aliment_id, remote_id, updated_at, needs_sync',
+  pending_deletions: '++id, table_name, remote_id, created_at',
+  sync_state: '&key',
+  // Nouvelles tables coaching sportif
+  training_plans:    '++id, is_active, remote_id, updated_at, needs_sync',
+  training_sessions: '++id, date, plan_id, type, completed, [date+type], remote_id, updated_at, needs_sync',
+  strava_activities: 'id, start_date, type',
+});
+
 // ==========================================================================
 // HOOKS DEXIE AUTOMATIQUES (Phase 4.2)
 // ==========================================================================
@@ -62,7 +80,7 @@ db.version(2).stores({
 // Exception : les aliments `source = 'ciqual'` (dataset fixe, non syncé).
 // ==========================================================================
 
-const SYNCED_TABLES = ['profil', 'aliments', 'consommations', 'pesees', 'repasTypes', 'repasTypeItems'];
+const SYNCED_TABLES = ['profil', 'aliments', 'consommations', 'pesees', 'repasTypes', 'repasTypeItems', 'training_plans', 'training_sessions'];
 
 for (const tableName of SYNCED_TABLES) {
   db[tableName].hook('creating', function (primKey, obj) {
@@ -852,6 +870,146 @@ export async function deleteCustomFood(id) {
 }
 
 // ==========================================================================
+// TRAINING (Phase 5.B)
+// ==========================================================================
+
+/**
+ * Retourne le plan d'entraînement actif de l'utilisateur, ou null.
+ */
+export async function getActiveTrainingPlan() {
+  const all = await db.training_plans.toArray();
+  return all.find(p => p.is_active === true) || null;
+}
+
+/**
+ * Crée ou met à jour le plan actif. Désactive tout autre plan.
+ */
+export async function saveTrainingPlan(data) {
+  const now = new Date().toISOString();
+
+  // Désactive les autres plans
+  const active = await getActiveTrainingPlan();
+  if (active && active.id !== data.id) {
+    await db.training_plans.update(active.id, { is_active: false });
+  }
+
+  if (data.id) {
+    await db.training_plans.update(data.id, {
+      nom: data.nom,
+      course_freq: data.course_freq,
+      muscu_freq: data.muscu_freq,
+      start_date: data.start_date,
+      objectif_course: data.objectif_course,
+      objectif_muscu: data.objectif_muscu,
+      is_active: true,
+    });
+    return data.id;
+  } else {
+    const id = await db.training_plans.add({
+      nom: data.nom || 'Mon programme',
+      course_freq: data.course_freq || 0,
+      muscu_freq: data.muscu_freq || 0,
+      start_date: data.start_date || todayISO(),
+      objectif_course: data.objectif_course || null,
+      objectif_muscu: data.objectif_muscu || null,
+      is_active: true,
+      created_at: now,
+    });
+    triggerSync();
+    return id;
+  }
+}
+
+/**
+ * Désactive le plan actif (sans le supprimer).
+ */
+export async function deactivateTrainingPlan(planId) {
+  await db.training_plans.update(Number(planId), { is_active: false });
+  triggerSync();
+}
+
+/**
+ * Récupère les séances d'une date (tri par heure de création).
+ */
+export async function getSessionsForDate(date) {
+  return await db.training_sessions.where('date').equals(date).sortBy('created_at');
+}
+
+/**
+ * Récupère les séances sur une plage [startIso, endIso] inclusive.
+ */
+export async function getSessionsRange(startIso, endIso) {
+  return await db.training_sessions
+    .where('date').between(startIso, endIso, true, true)
+    .sortBy('date');
+}
+
+/**
+ * Ajoute une ou plusieurs séances.
+ */
+export async function addTrainingSessions(sessions) {
+  const now = new Date().toISOString();
+  const withMeta = sessions.map(s => ({
+    ...s,
+    created_at: now,
+  }));
+  return await db.training_sessions.bulkAdd(withMeta);
+}
+
+/**
+ * Met à jour une séance (notes, completed, duree réelle, etc.).
+ */
+export async function updateSession(id, updates) {
+  await db.training_sessions.update(Number(id), updates);
+}
+
+/**
+ * Marque une séance comme complétée ou non.
+ */
+export async function toggleSessionCompleted(id) {
+  const session = await db.training_sessions.get(Number(id));
+  if (!session) return;
+  await db.training_sessions.update(Number(id), {
+    completed: !session.completed,
+    completed_at: session.completed ? null : new Date().toISOString(),
+  });
+}
+
+/**
+ * Supprime une séance.
+ */
+export async function deleteSession(id) {
+  const session = await db.training_sessions.get(Number(id));
+  await enqueueDeletion('training_sessions', session);
+  await db.training_sessions.delete(Number(id));
+  triggerSync();
+}
+
+/**
+ * Remplace le planning d'une semaine : supprime les sessions existantes non-completées
+ * de la semaine et insère les nouvelles. Préserve les sessions déjà complétées.
+ */
+export async function regenerateWeekSessions(startIso, endIso, newSessions) {
+  const existing = await db.training_sessions
+    .where('date').between(startIso, endIso, true, true)
+    .toArray();
+
+  // Supprimer les non-completées (qu'on va régénérer)
+  for (const s of existing) {
+    if (!s.completed) {
+      await enqueueDeletion('training_sessions', s);
+      await db.training_sessions.delete(s.id);
+    }
+  }
+
+  // Ajouter les nouvelles
+  if (newSessions && newSessions.length > 0) {
+    await addTrainingSessions(newSessions);
+  }
+  triggerSync();
+}
+
+// ==========================================================================
 // EXPORT
 // ==========================================================================
 
@@ -909,6 +1067,9 @@ export async function resetAll() {
   await db.repasTypeItems.clear();
   await db.pending_deletions.clear();
   await db.sync_state.clear();
+  await db.training_plans.clear();
+  await db.training_sessions.clear();
+  await db.strava_activities.clear();
   localStorage.removeItem('jamra_foods_imported_version');
 }
 

@@ -13,6 +13,8 @@ import {
   alimentLocalToRemote,
   consommationLocalToRemote,
   peseeLocalToRemote,
+  trainingPlanLocalToRemote,
+  trainingSessionLocalToRemote,
 } from './mappers';
 
 /**
@@ -172,6 +174,95 @@ export async function pushPesees(userId) {
 }
 
 // ==========================================================================
+// PUSH TRAINING PLANS
+// ==========================================================================
+
+export async function pushTrainingPlans(userId) {
+  const pending = await db.training_plans
+    .filter(p => p.needs_sync === true)
+    .toArray();
+
+  let count = 0;
+  for (const local of pending) {
+    const payload = trainingPlanLocalToRemote(local, userId);
+
+    let result;
+    if (local.remote_id) {
+      result = await supabase
+        .from('training_plans')
+        .update(payload)
+        .eq('id', local.remote_id)
+        .select()
+        .single();
+    } else {
+      result = await supabase
+        .from('training_plans')
+        .insert(payload)
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error('[sync] push training_plan failed:', result.error, local);
+      continue;
+    }
+
+    await markPushed(db.training_plans, local.id, result.data.id);
+    count++;
+  }
+
+  return { count };
+}
+
+// ==========================================================================
+// PUSH TRAINING SESSIONS
+// ==========================================================================
+
+export async function pushTrainingSessions(userId) {
+  const pending = await db.training_sessions
+    .filter(s => s.needs_sync === true)
+    .toArray();
+
+  let count = 0;
+  let skipped = 0;
+
+  for (const local of pending) {
+    const payload = await trainingSessionLocalToRemote(local, userId);
+
+    if (!payload) {
+      skipped++;
+      continue;
+    }
+
+    let result;
+    if (local.remote_id) {
+      result = await supabase
+        .from('training_sessions')
+        .update(payload)
+        .eq('id', local.remote_id)
+        .select()
+        .single();
+    } else {
+      result = await supabase
+        .from('training_sessions')
+        .insert(payload)
+        .select()
+        .single();
+    }
+
+    if (result.error) {
+      console.error('[sync] push training_session failed:', result.error, local);
+      continue;
+    }
+
+    await markPushed(db.training_sessions, local.id, result.data.id);
+    count++;
+  }
+
+  return { count, skipped };
+}
+
+// ==========================================================================
 // PUSH PENDING DELETIONS
 // ==========================================================================
 
@@ -182,6 +273,8 @@ const TABLE_MAP = {
   pesees: 'pesees',
   repasTypes: 'repas_types',
   repasTypeItems: 'repas_type_items',
+  training_plans: 'training_plans',
+  training_sessions: 'training_sessions',
 };
 
 export async function pushDeletions() {

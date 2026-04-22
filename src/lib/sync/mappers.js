@@ -210,3 +210,91 @@ export function peseeRemoteToLocal(remote) {
     __from_remote: true,
   };
 }
+
+// ==========================================================================
+// TRAINING PLANS
+// ==========================================================================
+
+export function trainingPlanLocalToRemote(local, userId) {
+  const clean = stripInternalFields(local);
+  const { id, created_at, updated_at, ...rest } = clean;
+  return {
+    ...rest,
+    profile_id: userId,
+  };
+}
+
+export function trainingPlanRemoteToLocal(remote) {
+  return {
+    remote_id: remote.id,
+    nom: remote.nom,
+    course_freq: remote.course_freq,
+    muscu_freq: remote.muscu_freq,
+    start_date: remote.start_date,
+    is_active: remote.is_active,
+    objectif_course: remote.objectif_course,
+    objectif_muscu: remote.objectif_muscu,
+    created_at: remote.created_at,
+    updated_at: remote.updated_at,
+    needs_sync: false,
+    __from_remote: true,
+  };
+}
+
+// ==========================================================================
+// TRAINING SESSIONS
+// ==========================================================================
+
+export async function trainingSessionLocalToRemote(local, userId) {
+  const clean = stripInternalFields(local);
+  const { id, plan_id: localPlanId, created_at, updated_at, ...rest } = clean;
+
+  // Résoudre le plan local → remote_id
+  let plan_id = null;
+  if (localPlanId) {
+    const plan = await db.training_plans.get(Number(localPlanId));
+    if (plan?.remote_id) {
+      plan_id = plan.remote_id;
+    } else if (plan) {
+      // Plan pas encore sync : on skip pour retenter plus tard
+      return null;
+    }
+  }
+
+  return {
+    ...rest,
+    profile_id: userId,
+    plan_id,
+  };
+}
+
+export async function trainingSessionRemoteToLocal(remote) {
+  // Résoudre plan distant → local
+  let planIdLocal = null;
+  if (remote.plan_id) {
+    const local = await db.training_plans.where('remote_id').equals(remote.plan_id).first();
+    planIdLocal = local?.id ?? null;
+  }
+
+  return {
+    remote_id: remote.id,
+    plan_id: planIdLocal,
+    date: remote.date,
+    type: remote.type,
+    sous_type: remote.sous_type,
+    titre: remote.titre,
+    description: remote.description,
+    duree_prevue_min: remote.duree_prevue_min,
+    duree_reelle_min: remote.duree_reelle_min,
+    intensite: remote.intensite,
+    kcal_estimees: remote.kcal_estimees,
+    completed: remote.completed ?? false,
+    completed_at: remote.completed_at,
+    strava_activity_id: remote.strava_activity_id,
+    notes: remote.notes,
+    created_at: remote.created_at,
+    updated_at: remote.updated_at,
+    needs_sync: false,
+    __from_remote: true,
+  };
+}
