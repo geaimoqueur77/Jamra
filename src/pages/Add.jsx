@@ -43,6 +43,9 @@ function FoodItem({ food, onClick }) {
           PERSO
         </div>
       )}
+      {food.is_shared && (
+        <div className="text-xs" title="Partagé dans ton foyer">🏠</div>
+      )}
       {food.is_favori && (
         <div className="text-heat-amber text-sm">★</div>
       )}

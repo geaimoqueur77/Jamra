@@ -114,7 +114,9 @@ export async function pullAliments(userId) {
   let maxUpdated = lastPulled;
 
   for (const remote of data) {
-    const localData = alimentRemoteToLocal(remote);
+    // Préserver les champs perso locaux (favori, usages) s'ils existent
+    const existingLocal = await db.aliments.where('remote_id').equals(remote.id).first();
+    const localData = alimentRemoteToLocal(remote, { preserveLocal: existingLocal });
     const action = await mergeRemote(db.aliments, remote.id, localData);
     if (action !== 'skipped') count++;
     if (remote.updated_at > maxUpdated) maxUpdated = remote.updated_at;

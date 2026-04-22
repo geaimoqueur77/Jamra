@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createCustomFood, updateCustomFood, deleteCustomFood, getFood, todayISO } from '../db/database';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { createCustomFood, updateCustomFood, deleteCustomFood, getFood, getProfile, todayISO } from '../db/database';
 import { FOOD_CATEGORIES, CATEGORY_ICONS } from '../db/foodsDataset';
 import Header from '../components/layout/Header';
 import Button from '../components/ui/Button';
@@ -74,10 +75,14 @@ export default function CreateCustomFood() {
     sel_100g: '',
     portion_defaut_g: '',
     portion_defaut_nom: '',
+    is_shared: false,
   });
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [showDelete, setShowDelete] = useState(false);
+
+  const profile = useLiveQuery(getProfile);
+  const hasWorkspace = !!profile?.workspace_id;
 
   // Pré-charger en mode édition
   useEffect(() => {
@@ -103,6 +108,7 @@ export default function CreateCustomFood() {
         sel_100g: toStr(food.sel_100g),
         portion_defaut_g: toStr(food.portion_defaut_g),
         portion_defaut_nom: food.portion_defaut_nom || '',
+        is_shared: food.is_shared || false,
       });
     })();
   }, [editId, isEditMode, navigate]);
@@ -143,6 +149,8 @@ export default function CreateCustomFood() {
         sel_100g: num(form.sel_100g) != null ? Math.round(num(form.sel_100g) * 100) / 100 : null,
         portion_defaut_g: num(form.portion_defaut_g),
         portion_defaut_nom: form.portion_defaut_nom.trim() || null,
+        is_shared: hasWorkspace ? form.is_shared : false,
+        workspace_id: hasWorkspace && form.is_shared ? profile.workspace_id : null,
       };
 
       if (isEditMode) {
@@ -293,6 +301,47 @@ export default function CreateCustomFood() {
             </Field>
           </div>
         </div>
+
+        {/* Partage dans le foyer (Phase 4.C) */}
+        {hasWorkspace && (
+          <div className="mb-6">
+            <div className="font-display font-bold text-[11px] uppercase tracking-[0.12em] text-text-tertiary mb-3">
+              Partage
+            </div>
+            <button
+              type="button"
+              onClick={() => update('is_shared', !form.is_shared)}
+              className={`
+                w-full p-4 rounded-xl border flex items-start gap-3 text-left transition-all
+                ${form.is_shared
+                  ? 'border-heat-orange bg-gradient-to-br from-[rgba(255,170,51,0.08)] to-[rgba(255,23,68,0.08)]'
+                  : 'border-subtle bg-bg-surface1'
+                }
+              `}
+            >
+              <div className={`
+                w-10 h-6 rounded-full relative transition-all flex-shrink-0 mt-0.5
+                ${form.is_shared ? 'bg-gradient-to-r from-heat-amber to-heat-orange' : 'bg-bg-surface2'}
+              `}>
+                <div className={`
+                  absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all
+                  ${form.is_shared ? 'left-[18px]' : 'left-0.5'}
+                `} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display font-bold text-sm uppercase tracking-[0.04em] text-text-primary flex items-center gap-2">
+                  🏠 Partager dans le foyer
+                </div>
+                <div className="font-body text-xs text-text-secondary mt-1">
+                  {form.is_shared
+                    ? 'Tous les membres de ton foyer pourront utiliser cet aliment.'
+                    : 'Cet aliment reste privé, visible uniquement par toi.'
+                  }
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
 
         {/* Zone danger (mode édition uniquement) */}
         {isEditMode && (

@@ -61,18 +61,27 @@ export function profileRemoteToLocal(remote) {
 
 export function alimentLocalToRemote(local, userId) {
   const clean = stripInternalFields(local);
-  const { id, created_at, updated_at, ...rest } = clean;
+  const {
+    id, created_at, updated_at,
+    // Ces champs sont strictement locaux (par-user), pas sync
+    is_favori, nombre_usages, dernier_usage,
+    ...rest
+  } = clean;
   return {
     ...rest,
     owner_profile_id: userId,
     is_shared: rest.is_shared ?? false,
-    // Les valeurs numériques sont converties par Supabase (accepte string/number)
   };
 }
 
-export function alimentRemoteToLocal(remote) {
+export function alimentRemoteToLocal(remote, { preserveLocal = null } = {}) {
+  // Les champs "perso" (is_favori, usages) sont préservés côté local
+  // s'ils existent déjà, sinon défauts à false/0.
+  const localPerso = preserveLocal || {};
   return {
     remote_id: remote.id,
+    owner_profile_id: remote.owner_profile_id,
+    workspace_id: remote.workspace_id,
     source: remote.source,
     source_id: remote.source_id,
     code_barres: remote.code_barres,
@@ -89,10 +98,11 @@ export function alimentRemoteToLocal(remote) {
     sel_100g: remote.sel_100g != null ? Number(remote.sel_100g) : null,
     portion_defaut_g: remote.portion_defaut_g != null ? Number(remote.portion_defaut_g) : null,
     portion_defaut_nom: remote.portion_defaut_nom,
-    is_favori: remote.is_favori ?? false,
     is_shared: remote.is_shared ?? false,
-    nombre_usages: remote.nombre_usages ?? 0,
-    dernier_usage: remote.dernier_usage,
+    // Perso → on préserve le local, ou on met les défauts si nouveau
+    is_favori: localPerso.is_favori ?? false,
+    nombre_usages: localPerso.nombre_usages ?? 0,
+    dernier_usage: localPerso.dernier_usage ?? null,
     created_at: remote.created_at,
     updated_at: remote.updated_at,
     needs_sync: false,

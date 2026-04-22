@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getFood, addMealEntry, toggleFavorite, todayISO } from '../db/database';
 import { CATEGORY_ICONS } from '../db/foodsDataset';
 import { formatNumber } from '../utils/format';
+import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
 import Button from '../components/ui/Button';
 
@@ -34,6 +35,7 @@ export default function FoodDetail() {
   const [searchParams] = useSearchParams();
   const meal = searchParams.get('meal') || 'collation';
   const date = searchParams.get('date') || todayISO();
+  const { user } = useAuth();
 
   const [food, setFood] = useState(null);
   const [quantity, setQuantity] = useState(100);
@@ -62,6 +64,13 @@ export default function FoodDetail() {
   const factor = quantity / 100;
   const calc = (v) => v != null ? Math.round(v * factor * 10) / 10 : null;
   const calcInt = (v) => v != null ? Math.round(v * factor) : null;
+
+  // L'aliment m'appartient si :
+  //  - pas encore sync (owner_profile_id null) ET source != ciqual
+  //  - OU owner_profile_id correspond à mon user.id
+  const isMine =
+    food.source !== 'ciqual' &&
+    (!food.owner_profile_id || food.owner_profile_id === user?.id);
 
   const kcal = calcInt(food.kcal_100g);
   const proteines = calc(food.proteines_100g);
@@ -120,6 +129,14 @@ export default function FoodDetail() {
           <div className="font-mono text-[10px] text-text-tertiary tracking-[0.2em] uppercase mt-2">
             {food.source === 'ciqual' ? 'CIQUAL' : food.source === 'perso' ? 'Perso' : food.source === 'openfoodfacts' ? 'OFF' : food.source} · {food.categorie}
           </div>
+          {food.is_shared && (
+            <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-[rgba(255,170,51,0.1)] border border-heat-amber/40">
+              <span className="text-xs">🏠</span>
+              <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-heat-amber">
+                {isMine ? 'Partagé avec le foyer' : 'Partagé par un membre'}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Quantity input */}
@@ -207,8 +224,8 @@ export default function FoodDetail() {
           </button>
         </div>
 
-        {/* Éditer aliment perso */}
-        {food.source === 'perso' && (
+        {/* Éditer aliment perso (uniquement si c'est le mien) */}
+        {food.source === 'perso' && isMine && (
           <div className="px-6 mb-4">
             <button
               onClick={() => {

@@ -318,6 +318,8 @@ export async function createCustomFood(data) {
     portion_defaut_g: data.portion_defaut_g || null,
     portion_defaut_nom: data.portion_defaut_nom || null,
     is_favori: false,
+    is_shared: data.is_shared || false,
+    workspace_id: data.workspace_id || null,
     dernier_usage: null,
     nombre_usages: 0,
     created_at: now,
@@ -833,6 +835,8 @@ export async function updateCustomFood(id, data) {
     sel_100g: data.sel_100g,
     portion_defaut_g: data.portion_defaut_g || null,
     portion_defaut_nom: data.portion_defaut_nom || null,
+    is_shared: data.is_shared !== undefined ? data.is_shared : existing.is_shared,
+    workspace_id: data.workspace_id !== undefined ? data.workspace_id : existing.workspace_id,
   });
   // NB : les snapshots des consommations passées ne sont pas modifiés (historique figé).
 }

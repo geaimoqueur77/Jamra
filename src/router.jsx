@@ -15,6 +15,7 @@ import EditEntry from './pages/EditEntry';
 import BarcodeScanner from './pages/BarcodeScanner';
 import CreateCustomFood from './pages/CreateCustomFood';
 import CopyMeal from './pages/CopyMeal';
+import Workspace from './pages/Workspace';
 
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -104,6 +105,7 @@ export const router = createBrowserRouter([
           { path: '/scanner', element: <BarcodeScanner /> },
           { path: '/creer-aliment', element: <CreateCustomFood /> },
           { path: '/copier-repas', element: <CopyMeal /> },
+          { path: '/foyer', element: <Workspace /> },
         ],
       },
     ],

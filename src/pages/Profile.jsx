@@ -209,9 +209,14 @@ export default function Profile() {
               </div>
             </div>
           )}
-          <Button variant="outline" size="md" fullWidth onClick={handleLogout}>
-            Se déconnecter
-          </Button>
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/foyer')}>
+              🏠 Mon foyer
+            </Button>
+            <Button variant="outline" size="md" fullWidth onClick={handleLogout}>
+              Se déconnecter
+            </Button>
+          </div>
         </Card>
 
         {/* Synchronisation (Phase 4.2) */}
