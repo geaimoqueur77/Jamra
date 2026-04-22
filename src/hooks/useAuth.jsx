@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { initSync, stopSync } from '../lib/sync';
 
 const AuthContext = createContext(null);
 
@@ -22,12 +23,18 @@ export function AuthProvider({ children }) {
       if (!mounted) return;
       setSession(data.session);
       setLoading(false);
+      if (data.session?.user) initSync(data.session.user.id);
     });
 
     // Écoute les changements d'auth (signin, signout, refresh…)
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
       setSession(newSession);
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        initSync(newSession.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        stopSync();
+      }
     });
 
     return () => {

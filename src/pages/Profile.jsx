@@ -5,6 +5,7 @@ import { getProfile, resetAll, exportAll, toCSV } from '../db/database';
 import { computeProfileMetrics, calculateBMI } from '../utils/calculations';
 import { formatNumber, formatDateShort } from '../utils/format';
 import { useAuth } from '../hooks/useAuth';
+import useSync from '../hooks/useSync';
 import Header from '../components/layout/Header';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -32,6 +33,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const profile = useLiveQuery(getProfile);
   const { user, signOut } = useAuth();
+  const sync = useSync();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -209,6 +211,100 @@ export default function Profile() {
           )}
           <Button variant="outline" size="md" fullWidth onClick={handleLogout}>
             Se déconnecter
+          </Button>
+        </Card>
+
+        {/* Synchronisation (Phase 4.2) */}
+        <Card>
+          <div className="font-display font-bold text-xs uppercase tracking-[0.12em] text-text-tertiary mb-3">
+            Synchronisation
+          </div>
+          <div className="flex items-center gap-3 mb-3">
+            {sync.status === 'syncing' && (
+              <>
+                <div className="w-8 h-8 rounded-full border-2 border-heat-amber border-t-transparent animate-spin" />
+                <div className="flex-1">
+                  <div className="font-body text-sm text-text-primary">Synchronisation en cours...</div>
+                  <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase">Quelques secondes</div>
+                </div>
+              </>
+            )}
+            {sync.status === 'idle' && (
+              <>
+                <div className="w-8 h-8 rounded-full bg-[rgba(0,230,118,0.15)] flex items-center justify-center text-success">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-body text-sm text-text-primary">À jour</div>
+                  <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase">
+                    {sync.lastSyncAt
+                      ? `Dernière sync à ${new Date(sync.lastSyncAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                      : 'Jamais synchronisé'}
+                  </div>
+                </div>
+              </>
+            )}
+            {sync.status === 'offline' && (
+              <>
+                <div className="w-8 h-8 rounded-full bg-[rgba(255,170,51,0.15)] flex items-center justify-center text-heat-amber">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" />
+                    <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" />
+                    <path d="M10.71 5.05A16 16 0 0 1 22.58 9" />
+                    <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" />
+                    <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                    <line x1="12" y1="20" x2="12.01" y2="20" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-body text-sm text-text-primary">Hors-ligne</div>
+                  <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase">
+                    Les changements sont gardés localement
+                  </div>
+                </div>
+              </>
+            )}
+            {sync.status === 'error' && (
+              <>
+                <div className="w-8 h-8 rounded-full bg-[rgba(255,23,68,0.15)] flex items-center justify-center text-danger">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-body text-sm text-text-primary">Erreur de sync</div>
+                  <div className="font-mono text-[10px] text-danger tracking-wider uppercase break-words">
+                    {sync.error || 'Inconnue'}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {sync.pendingCount > 0 && (
+            <div className="px-3 py-2 mb-3 rounded-lg bg-bg-surface2 flex items-center justify-between">
+              <span className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary">
+                En attente
+              </span>
+              <span className="font-display font-bold text-sm text-heat-amber">
+                {sync.pendingCount} élément{sync.pendingCount > 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
+
+          <Button
+            variant="outline"
+            size="md"
+            fullWidth
+            onClick={() => sync.forceSync()}
+            disabled={sync.status === 'syncing'}
+          >
+            {sync.status === 'syncing' ? 'En cours...' : 'Synchroniser maintenant'}
           </Button>
         </Card>
 

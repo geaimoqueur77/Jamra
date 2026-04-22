@@ -1,7 +1,9 @@
 /**
  * JAMRA - Base de données locale (IndexedDB via Dexie)
  *
- * Modèle de données Phase 1 — 6 entités
+ * Modèle de données Phase 1-4
+ *  - v1 : schema initial local-only
+ *  - v2 : ajout des champs de synchronisation (remote_id, updated_at, needs_sync)
  */
 
 import Dexie from 'dexie';
@@ -17,6 +19,141 @@ db.version(1).stores({
   repasTypes: '++id, nom, nombre_usages',
   repasTypeItems: '++id, repas_type_id, aliment_id',
 });
+
+// ----------------------------------------------------------------------
+// v2 (Phase 4.2) — Synchronisation Supabase
+// On ajoute remote_id (uuid Supabase), updated_at (timestamp), needs_sync (bool)
+// ----------------------------------------------------------------------
+db.version(2).stores({
+  profil:          '++id, remote_id, updated_at, needs_sync',
+  aliments:        '++id, source, source_id, nom, code_barres, is_favori, dernier_usage, nombre_usages, categorie, remote_id, updated_at, needs_sync',
+  consommations:   '++id, date, type_repas, aliment_id, [date+type_repas], remote_id, updated_at, needs_sync',
+  pesees:          '++id, &date, remote_id, updated_at, needs_sync',
+  repasTypes:      '++id, nom, nombre_usages, remote_id, updated_at, needs_sync',
+  repasTypeItems:  '++id, repas_type_id, aliment_id, remote_id, updated_at, needs_sync',
+  // Nouvelle : queue des suppressions à propager à Supabase
+  pending_deletions: '++id, table_name, remote_id, created_at',
+  // Nouvelle : état de synchronisation global (clé/valeur)
+  sync_state: '&key',
+}).upgrade(async (tx) => {
+  // Tous les records existants sont marqués "à synchroniser"
+  const now = new Date().toISOString();
+  for (const tableName of ['profil', 'aliments', 'consommations', 'pesees', 'repasTypes', 'repasTypeItems']) {
+    await tx.table(tableName).toCollection().modify(record => {
+      if (record.source === 'ciqual') {
+        // Les aliments Ciqual ne sont pas synchronisés (dataset local)
+        record.needs_sync = false;
+      } else {
+        record.needs_sync = true;
+      }
+      record.remote_id = null;
+      record.updated_at = record.updated_at || record.created_at || now;
+    });
+  }
+});
+
+// ==========================================================================
+// HOOKS DEXIE AUTOMATIQUES (Phase 4.2)
+// ==========================================================================
+// Ces hooks s'exécutent avant chaque add/update sur les tables synchronisées.
+// Ils posent automatiquement updated_at et needs_sync, pour que la sync engine
+// puisse détecter les records à pousser.
+//
+// Exception : les aliments `source = 'ciqual'` (dataset fixe, non syncé).
+// ==========================================================================
+
+const SYNCED_TABLES = ['profil', 'aliments', 'consommations', 'pesees', 'repasTypes', 'repasTypeItems'];
+
+for (const tableName of SYNCED_TABLES) {
+  db[tableName].hook('creating', function (primKey, obj) {
+    // Les aliments Ciqual ne sont jamais synchronisés
+    if (obj.source === 'ciqual') {
+      obj.needs_sync = false;
+      return;
+    }
+    // Les records qui viennent d'un pull Supabase passent tels quels
+    if (obj.__from_remote) {
+      delete obj.__from_remote;
+      if (obj.needs_sync === undefined) obj.needs_sync = false;
+      return;
+    }
+    // Mutation locale normale
+    if (obj.updated_at === undefined) obj.updated_at = nowISO();
+    if (obj.needs_sync === undefined) obj.needs_sync = true;
+    if (obj.remote_id === undefined) obj.remote_id = null;
+    // Déclenche une sync en arrière-plan après le commit
+    this.onsuccess = () => triggerSync();
+  });
+
+  db[tableName].hook('updating', function (modifications, primKey, obj) {
+    // Les updates marqués __from_remote passent tels quels, on enlève juste le flag
+    if (modifications.__from_remote) {
+      const rest = { ...modifications };
+      delete rest.__from_remote;
+      return rest;
+    }
+
+    // Si l'update ne touche QUE des champs internes de sync, on passe tel quel
+    const keys = Object.keys(modifications);
+    const isPureSyncUpdate = keys.every(k => ['updated_at', 'needs_sync', 'remote_id'].includes(k));
+    if (isPureSyncUpdate) return;
+
+    // Aliments ciqual : pas de sync
+    if (obj.source === 'ciqual') return;
+
+    // Mutation locale normale : on tag pour sync et on déclenche le flush
+    this.onsuccess = () => triggerSync();
+    return {
+      ...modifications,
+      updated_at: nowISO(),
+      needs_sync: true,
+    };
+  });
+}
+
+// ==========================================================================
+// HELPERS SYNC (Phase 4.2)
+// ==========================================================================
+
+function nowISO() {
+  return new Date().toISOString();
+}
+
+/**
+ * Marque un record comme à synchroniser. À appeler lors de toute mutation
+ * sur une table qui est synchronisée avec Supabase.
+ */
+function withSyncFields(record, { keepRemote = true } = {}) {
+  return {
+    ...record,
+    updated_at: nowISO(),
+    needs_sync: true,
+    ...(keepRemote ? {} : { remote_id: null }),
+  };
+}
+
+/**
+ * Enregistre une suppression en attente pour propagation à Supabase.
+ * Si le record n'a jamais été push (remote_id null), pas besoin de suppression distante.
+ */
+async function enqueueDeletion(tableName, record) {
+  if (!record?.remote_id) return;
+  await db.pending_deletions.add({
+    table_name: tableName,
+    remote_id: record.remote_id,
+    created_at: nowISO(),
+  });
+}
+
+// Fallback appelé après une mutation pour déclencher un flush de la sync.
+// Rempli à la volée par sync/engine.js pour éviter les dépendances circulaires.
+let __scheduleSyncFlush = () => {};
+export function registerSyncFlushHandler(fn) {
+  __scheduleSyncFlush = typeof fn === 'function' ? fn : () => {};
+}
+function triggerSync() {
+  try { __scheduleSyncFlush(); } catch (_) {}
+}
 
 // ==========================================================================
 // PROFIL
@@ -370,7 +507,10 @@ export async function updateMealEntry(entryId, { quantite_g, type_repas }) {
 }
 
 export async function deleteMealEntry(entryId) {
+  const record = await db.consommations.get(Number(entryId));
+  await enqueueDeletion('consommations', record);
   await db.consommations.delete(Number(entryId));
+  triggerSync();
 }
 
 export async function getMealEntry(entryId) {
@@ -465,11 +605,14 @@ export async function addOrUpdateWeight({ date, poids_kg }) {
 }
 
 export async function deleteWeight(id) {
+  const record = await db.pesees.get(Number(id));
+  await enqueueDeletion('pesees', record);
   await db.pesees.delete(Number(id));
   const latest = await getLatestWeight();
   if (latest) {
-    await db.profil.update(1, { poids_actuel_kg: latest.poids_kg, updated_at: new Date().toISOString() });
+    await db.profil.update(1, { poids_actuel_kg: latest.poids_kg });
   }
+  triggerSync();
 }
 
 export async function getAllWeights() {
@@ -699,7 +842,9 @@ export async function deleteCustomFood(id) {
   if (!food || food.source !== 'perso') {
     throw new Error('Seuls les aliments persos peuvent être supprimés');
   }
+  await enqueueDeletion('aliments', food);
   await db.aliments.delete(Number(id));
+  triggerSync();
 }
 
 // ==========================================================================
@@ -758,6 +903,8 @@ export async function resetAll() {
   await db.pesees.clear();
   await db.repasTypes.clear();
   await db.repasTypeItems.clear();
+  await db.pending_deletions.clear();
+  await db.sync_state.clear();
   localStorage.removeItem('jamra_foods_imported_version');
 }
 
