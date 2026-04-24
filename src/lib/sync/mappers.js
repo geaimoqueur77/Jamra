@@ -22,22 +22,43 @@ function stripInternalFields(record) {
 // PROFIL
 // ==========================================================================
 
+/**
+ * Liste blanche des champs du profil qui sont envoyés à Supabase.
+ * Tous les autres sont filtrés (ex: champs locaux non sync).
+ */
+const PROFILE_REMOTE_FIELDS = [
+  'nom',
+  'sexe',
+  'date_naissance',
+  'taille_cm',
+  'poids_initial_kg',
+  'poids_actuel_kg',
+  'poids_cible_kg',
+  'niveau_activite',
+  'scenario',
+  'proteines_g_par_kg',
+  'workspace_id',
+  'objectif',
+  'date_debut',
+  'date_cible',
+];
+
 export function profileLocalToRemote(local, userId) {
-  const payload = stripInternalFields(local);
-  // Champs non présents sur le profile Supabase : à filtrer
-  const {
-    id,              // on n'utilise pas l'id local (string/number), on utilise userId
-    created_at,
-    ...clean
-  } = payload;
-  return { ...clean, id: userId };
+  const payload = {};
+  for (const field of PROFILE_REMOTE_FIELDS) {
+    if (local[field] !== undefined) {
+      payload[field] = local[field];
+    }
+  }
+  return { ...payload, id: userId };
 }
 
 export function profileRemoteToLocal(remote) {
   return {
-    // On garde id local = 1 (c'est le convention)
+    // On garde id local = 1 (c'est la convention Dexie)
     id: 1,
     remote_id: remote.id,
+    workspace_id: remote.workspace_id || null,
     nom: remote.nom,
     sexe: remote.sexe,
     date_naissance: remote.date_naissance,
@@ -48,6 +69,9 @@ export function profileRemoteToLocal(remote) {
     niveau_activite: remote.niveau_activite,
     scenario: remote.scenario,
     proteines_g_par_kg: remote.proteines_g_par_kg ? Number(remote.proteines_g_par_kg) : null,
+    objectif: remote.objectif || null,
+    date_debut: remote.date_debut || null,
+    date_cible: remote.date_cible || null,
     created_at: remote.created_at,
     updated_at: remote.updated_at,
     needs_sync: false,
