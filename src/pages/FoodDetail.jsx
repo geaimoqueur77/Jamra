@@ -140,8 +140,8 @@ export default function FoodDetail() {
         </div>
 
         {/* Quantity input */}
-        <div className="mx-6 mb-5 p-6 bg-bg-surface1 border border-subtle rounded-2xl text-center">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3">
+        <div className="mx-6 mb-5 p-6 surface-card rounded-2xl text-center animate-fade-up">
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3 font-bold">
             Quantité
           </div>
           <div className="flex items-baseline justify-center gap-2 mb-4">
@@ -150,10 +150,11 @@ export default function FoodDetail() {
               inputMode="decimal"
               value={inputValue}
               onChange={e => handleInputChange(e.target.value)}
-              className="w-32 bg-transparent border-none outline-none text-center font-display font-extrabold text-6xl leading-none tracking-tight text-heat-gradient"
+              className="w-32 bg-transparent border-none outline-none text-center font-display font-extrabold text-6xl leading-none text-heat-gradient tabular"
               style={{
                 WebkitAppearance: 'none',
                 MozAppearance: 'textfield',
+                letterSpacing: '-0.03em',
               }}
               min="0"
               step="5"
@@ -169,26 +170,31 @@ export default function FoodDetail() {
 
         {/* Quick buttons */}
         <div className="px-6 mb-6">
-          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-2">
+          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-2 font-bold">
             Raccourcis
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {QUICK_QUANTITIES.map(q => (
-              <button
-                key={q}
-                onClick={() => handleQuickQty(q)}
-                className={`
-                  py-3 rounded-xl border font-mono text-sm font-semibold
-                  transition-all duration-200 ease-out-quart
-                  ${quantity === q
-                    ? 'border-heat-orange text-text-primary bg-gradient-to-br from-[rgba(255,170,51,0.15)] to-[rgba(255,23,68,0.15)]'
-                    : 'border-subtle bg-bg-surface1 text-text-secondary hover:border-strong'
-                  }
-                `}
-              >
-                {q} g
-              </button>
-            ))}
+            {QUICK_QUANTITIES.map(q => {
+              const selected = quantity === q;
+              return (
+                <button
+                  key={q}
+                  onClick={() => handleQuickQty(q)}
+                  className="py-3 rounded-xl font-mono text-sm font-semibold press-down transition-all tabular"
+                  style={{
+                    background: selected
+                      ? 'linear-gradient(135deg, rgba(255,170,51,0.15), rgba(255,23,68,0.15))'
+                      : 'rgba(255, 255, 255, 0.04)',
+                    border: selected
+                      ? '0.5px solid #FF4D00'
+                      : '0.5px solid rgba(255, 255, 255, 0.1)',
+                    color: selected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  {q} g
+                </button>
+              );
+            })}
           </div>
         </div>
 

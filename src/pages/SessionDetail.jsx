@@ -87,14 +87,14 @@ export default function SessionDetail() {
     <div className="min-h-dvh flex flex-col">
       <Header variant="title" title="Séance" onBack={() => navigate(-1)} />
 
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-6 py-4 pb-6">
         {/* Hero */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 animate-fade-up">
           <div className="text-5xl mb-3">{config.emoji}</div>
-          <div className={`font-mono text-[10px] tracking-[0.2em] uppercase ${config.color} mb-1`}>
+          <div className={`font-mono text-[10px] tracking-[0.2em] uppercase ${config.color} mb-1.5 font-bold`}>
             {config.label}
           </div>
-          <div className="font-display font-bold text-xl uppercase tracking-[0.02em] text-text-primary px-2">
+          <div className="font-display font-bold text-xl uppercase tracking-[0.02em] text-text-primary px-2" style={{ letterSpacing: '-0.01em' }}>
             {session.titre}
           </div>
           <div className="font-mono text-[10px] text-text-tertiary tracking-wider mt-2">
@@ -104,46 +104,50 @@ export default function SessionDetail() {
 
         {/* Description */}
         {session.description && (
-          <div className="mb-5 p-4 bg-bg-surface1 border border-subtle rounded-xl">
-            <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-text-tertiary mb-2">
+          <div className="mb-5 p-4 surface-card rounded-2xl animate-fade-up" style={{ animationDelay: '60ms', animationFillMode: 'backwards' }}>
+            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-2 font-bold">
               Description
             </div>
-            <p className="text-sm text-text-secondary">{session.description}</p>
+            <p className="text-sm text-text-secondary leading-relaxed">{session.description}</p>
           </div>
         )}
 
-        {/* Paramètres */}
-        <div className="mb-5 grid grid-cols-2 gap-3">
+        {/* Paramètres grid */}
+        <div className="mb-5 grid grid-cols-2 gap-3 stagger-1">
           {session.duree_prevue_min != null && (
-            <div className="p-3 bg-bg-surface1 border border-subtle rounded-xl">
-              <div className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary">
+            <div className="p-4 surface-card rounded-2xl animate-fade-up" style={{ animationFillMode: 'backwards' }}>
+              <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary font-bold">
                 Durée prévue
               </div>
-              <div className="font-display font-bold text-xl text-text-primary mt-1">
-                {session.duree_prevue_min} <span className="font-mono text-xs text-text-tertiary">min</span>
+              <div className="font-display font-bold text-2xl text-text-primary mt-2 leading-none tabular" style={{ letterSpacing: '-0.02em' }}>
+                {session.duree_prevue_min}
+                <span className="font-mono text-xs text-text-tertiary ml-1.5 font-normal">min</span>
               </div>
             </div>
           )}
           {session.intensite && (
-            <div className="p-3 bg-bg-surface1 border border-subtle rounded-xl">
-              <div className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary">
+            <div className="p-4 surface-card rounded-2xl animate-fade-up" style={{ animationFillMode: 'backwards' }}>
+              <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary font-bold">
                 Intensité
               </div>
-              <div className="font-display font-bold text-xl text-heat-amber mt-1">
+              <div className="font-display font-bold text-2xl text-heat-amber mt-2 leading-none" style={{ letterSpacing: '-0.02em' }}>
                 {INTENSITE_LABELS[session.intensite] || session.intensite}
               </div>
             </div>
           )}
           {kcalEstimees > 0 && (
-            <div className="p-3 bg-bg-surface1 border border-subtle rounded-xl col-span-2">
-              <div className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary">
+            <div className="p-4 surface-featured rounded-2xl col-span-2 animate-fade-up" style={{ animationFillMode: 'backwards' }}>
+              <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-heat-amber font-bold">
                 Kcal estimées
               </div>
-              <div className="font-display font-bold text-xl text-heat-gradient mt-1">
-                {formatNumber(kcalEstimees)} kcal
+              <div className="flex items-baseline gap-1.5 mt-2">
+                <span className="font-display font-bold text-3xl text-heat-gradient leading-none tabular" style={{ letterSpacing: '-0.02em' }}>
+                  {formatNumber(kcalEstimees)}
+                </span>
+                <span className="font-mono text-xs text-text-tertiary font-normal">kcal</span>
               </div>
-              <div className="font-mono text-[10px] text-text-tertiary tracking-wider mt-1">
-                Calcul METs × poids × durée
+              <div className="font-mono text-[10px] text-text-tertiary tracking-wide mt-1.5">
+                METs × poids × durée
               </div>
             </div>
           )}
@@ -154,25 +158,32 @@ export default function SessionDetail() {
           <button
             onClick={handleToggle}
             className={`
-              w-full py-4 mb-5 rounded-2xl border-2 transition-all flex items-center justify-center gap-3
+              w-full py-4 mb-5 rounded-2xl transition-all flex items-center justify-center gap-3 press-down
               ${session.completed
-                ? 'bg-[rgba(0,230,118,0.08)] border-success text-success'
-                : 'border-subtle text-text-secondary hover:border-heat-orange hover:text-heat-orange'
+                ? 'border border-success text-success'
+                : 'text-text-secondary hover:border-heat-orange hover:text-heat-orange'
               }
             `}
+            style={{
+              background: session.completed ? 'rgba(0, 230, 118, 0.08)' : 'transparent',
+              border: session.completed ? '1px solid #00E676' : '1px dashed rgba(255, 255, 255, 0.15)',
+            }}
           >
-            <div className={`
-              w-8 h-8 rounded-full border-2 flex items-center justify-center
-              ${session.completed ? 'bg-success border-success text-white' : 'border-current'}
-            `}>
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+              style={{
+                background: session.completed ? '#00E676' : 'transparent',
+                border: session.completed ? 'none' : '2px solid currentColor',
+              }}
+            >
               {session.completed && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               )}
             </div>
             <span className="font-display font-bold text-sm uppercase tracking-[0.06em]">
-              {session.completed ? 'Séance complétée ✓' : 'Marquer comme faite'}
+              {session.completed ? 'Séance complétée' : 'Marquer comme faite'}
             </span>
           </button>
         )}

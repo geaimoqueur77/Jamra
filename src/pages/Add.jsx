@@ -17,37 +17,46 @@ function FoodItem({ food, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left flex items-center gap-3 p-3 rounded-xl hover:bg-bg-surface1 transition-colors"
+      className="w-full text-left flex items-center gap-3 p-2.5 rounded-xl press-down transition-all"
+      style={{ background: 'rgba(255, 255, 255, 0.03)' }}
     >
-      <div className="w-10 h-10 rounded-lg bg-bg-surface2 flex items-center justify-center text-xl flex-shrink-0">
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+        style={{ background: 'linear-gradient(135deg, rgba(255, 170, 51, 0.18), rgba(255, 77, 0, 0.12))' }}
+      >
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-body font-semibold text-sm truncate">{food.nom}</div>
-        <div className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">
-          {formatKcal(food.kcal_100g)} kcal / 100 g · {food.categorie}
+        <div className="flex items-center gap-1.5">
+          <div className="font-body font-medium text-[14px] truncate text-text-primary">{food.nom}</div>
+          {food.source === 'ciqual' && (
+            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase tracking-[0.06em] font-bold"
+                  style={{ background: 'rgba(0,230,118,0.14)', color: '#00E676' }}>
+              Ciqual
+            </span>
+          )}
+          {food.source === 'openfoodfacts' && (
+            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase tracking-[0.06em] font-bold"
+                  style={{ background: 'rgba(51,170,255,0.14)', color: '#33AAFF' }}>
+              OFF
+            </span>
+          )}
+          {food.source === 'perso' && (
+            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase tracking-[0.06em] font-bold"
+                  style={{ background: 'rgba(255,170,51,0.14)', color: '#FFAA33' }}>
+              Perso
+            </span>
+          )}
+        </div>
+        <div className="font-mono text-[11px] text-text-tertiary mt-0.5 tabular">
+          {formatKcal(food.kcal_100g)} kcal · {food.proteines_100g || 0}g prot · {food.glucides_100g || 0}g gluc
         </div>
       </div>
-      {food.source === 'ciqual' && (
-        <div className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider bg-[rgba(0,230,118,0.15)] text-success">
-          CIQUAL
-        </div>
-      )}
-      {food.source === 'openfoodfacts' && (
-        <div className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider bg-[rgba(51,170,255,0.15)] text-[#33AAFF]">
-          OFF
-        </div>
-      )}
-      {food.source === 'perso' && (
-        <div className="font-mono text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wider bg-[rgba(255,170,51,0.15)] text-heat-amber">
-          PERSO
-        </div>
-      )}
       {food.is_shared && (
-        <div className="text-xs" title="Partagé dans ton foyer">🏠</div>
+        <div className="text-sm flex-shrink-0" title="Partagé dans ton foyer">🏠</div>
       )}
       {food.is_favori && (
-        <div className="text-heat-amber text-sm">★</div>
+        <div className="text-heat-amber text-sm flex-shrink-0">★</div>
       )}
     </button>
   );
@@ -118,32 +127,47 @@ export default function Add() {
     <div>
       <Header
         variant="title"
-        title={`Ajouter · ${MEAL_LABELS[meal]}`}
+        title="Rechercher un aliment"
         onBack={() => navigate(-1)}
       />
+      <div className="px-6 pb-2 -mt-2">
+        <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-heat-amber font-bold">
+          Ajouter · {MEAL_LABELS[meal]}
+        </div>
+      </div>
 
       {/* Search bar */}
-      <div className="px-6 pb-2">
-        <div className="flex items-center gap-3 px-4 py-3.5 bg-bg-surface1 border border-subtle rounded-xl">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-text-tertiary flex-shrink-0">
+      <div className="px-6 pb-2 animate-fade-up">
+        <div
+          className="flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all"
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '0.5px solid rgba(255, 255, 255, 0.08)',
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255, 255, 255, 0.5)" strokeWidth="2" className="flex-shrink-0">
             <circle cx="11" cy="11" r="8" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
-            placeholder="Rechercher un aliment..."
+            placeholder="Nom d'aliment…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
-            className="flex-1 bg-transparent border-none outline-none text-sm text-text-primary placeholder:text-text-tertiary"
+            className="flex-1 bg-transparent border-none outline-none text-[15px] text-text-primary placeholder:text-text-tertiary"
           />
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="text-text-tertiary hover:text-text-primary"
+              className="w-6 h-6 rounded-full flex items-center justify-center press-down transition-colors"
+              style={{
+                color: 'rgba(255, 255, 255, 0.5)',
+                background: 'rgba(255, 255, 255, 0.06)',
+              }}
               aria-label="Effacer"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -153,22 +177,27 @@ export default function Add() {
       </div>
 
       {/* Actions rapides */}
-      <div className="px-6 pt-2 pb-1 grid grid-cols-3 gap-2">
+      <div className="px-6 pt-2 pb-2 grid grid-cols-3 gap-2">
         <button
           onClick={() => {
             const p = new URLSearchParams({ meal, ...(date ? { date } : {}) });
             navigate(`/scanner?${p.toString()}`);
           }}
-          className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-subtle bg-bg-surface1 hover:border-heat-orange transition-colors"
+          className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl press-down transition-all"
+          style={{
+            background: 'rgba(252, 76, 2, 0.08)',
+            border: '0.5px solid rgba(252, 76, 2, 0.3)',
+            color: '#FC4C02',
+          }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-heat-orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <rect x="3" y="4" width="18" height="16" rx="2" />
             <line x1="7" y1="8" x2="7" y2="16" />
             <line x1="10" y1="8" x2="10" y2="16" />
             <line x1="13" y1="8" x2="13" y2="16" />
             <line x1="17" y1="8" x2="17" y2="16" />
           </svg>
-          <div className="font-display font-bold text-[10px] uppercase tracking-[0.08em] text-text-primary">Code-barres</div>
+          <div className="font-display font-bold text-[10px] uppercase tracking-[0.08em]">Scanner</div>
         </button>
         <button
           onClick={() => {
@@ -176,25 +205,35 @@ export default function Add() {
             if (query.trim()) p.set('nom', query.trim());
             navigate(`/creer-aliment?${p.toString()}`);
           }}
-          className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-subtle bg-bg-surface1 hover:border-heat-orange transition-colors"
+          className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl press-down transition-all"
+          style={{
+            background: 'rgba(255, 170, 51, 0.08)',
+            border: '0.5px solid rgba(255, 170, 51, 0.3)',
+            color: '#FFAA33',
+          }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-heat-orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          <div className="font-display font-bold text-[10px] uppercase tracking-[0.08em] text-text-primary">Créer perso</div>
+          <div className="font-display font-bold text-[10px] uppercase tracking-[0.08em]">Créer</div>
         </button>
         <button
           onClick={() => {
             const p = new URLSearchParams({ meal, ...(date ? { date } : {}) });
             navigate(`/copier-repas?${p.toString()}`);
           }}
-          className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-subtle bg-bg-surface1 hover:border-heat-orange transition-colors"
+          className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl press-down transition-all"
+          style={{
+            background: 'rgba(255, 255, 255, 0.04)',
+            border: '0.5px solid rgba(255, 255, 255, 0.1)',
+            color: 'rgba(255, 255, 255, 0.7)',
+          }}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-heat-orange">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <rect x="9" y="9" width="13" height="13" rx="2" />
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
           </svg>
-          <div className="font-display font-bold text-[10px] uppercase tracking-[0.08em] text-text-primary">Copier un jour</div>
+          <div className="font-display font-bold text-[10px] uppercase tracking-[0.08em]">Copier</div>
         </button>
       </div>
 

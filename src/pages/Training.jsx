@@ -210,40 +210,40 @@ export default function Training() {
       <Header variant="centered" title="Mon entraînement" />
 
       {/* Plan actif */}
-      <div className="px-6 pt-2 pb-4">
-        <div className="p-4 rounded-2xl border border-heat-orange bg-gradient-to-br from-[rgba(255,170,51,0.06)] to-[rgba(255,23,68,0.06)]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-heat-amber">
+      <div className="px-6 pt-2 pb-4 animate-fade-up">
+        <div className="p-4 rounded-2xl surface-featured">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-heat-amber font-bold">
               Plan actif
             </div>
             <button
               onClick={() => navigate('/entrainement/config')}
-              className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary hover:text-heat-orange"
+              className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary press-down font-bold"
             >
-              Modifier
+              Modifier →
             </button>
           </div>
-          <div className="font-display font-bold text-lg text-text-primary mb-3">
+          <div className="font-display font-bold text-lg text-text-primary mb-3" style={{ letterSpacing: '-0.01em' }}>
             {plan.nom}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-bg-surface1">
+            <div className="p-3 surface-card rounded-xl">
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl">🏃</span>
-                <span className="font-display font-bold text-xl text-heat-orange">{plan.course_freq}</span>
-                <span className="font-mono text-[10px] text-text-tertiary tracking-wider">/ SEM</span>
+                <span className="text-xl">🏃</span>
+                <span className="font-display font-bold text-2xl text-heat-orange leading-none tabular" style={{ letterSpacing: '-0.02em' }}>{plan.course_freq}</span>
+                <span className="font-mono text-[9px] text-text-tertiary tracking-[0.12em] uppercase font-bold">/ sem</span>
               </div>
-              <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase mt-1">
+              <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase mt-2 font-bold">
                 Course
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-bg-surface1">
+            <div className="p-3 surface-card rounded-xl">
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl">💪</span>
-                <span className="font-display font-bold text-xl text-heat-amber">{plan.muscu_freq}</span>
-                <span className="font-mono text-[10px] text-text-tertiary tracking-wider">/ SEM</span>
+                <span className="text-xl">💪</span>
+                <span className="font-display font-bold text-2xl text-heat-amber leading-none tabular" style={{ letterSpacing: '-0.02em' }}>{plan.muscu_freq}</span>
+                <span className="font-mono text-[9px] text-text-tertiary tracking-[0.12em] uppercase font-bold">/ sem</span>
               </div>
-              <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase mt-1">
+              <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase mt-2 font-bold">
                 Muscu
               </div>
             </div>
@@ -252,10 +252,10 @@ export default function Training() {
       </div>
 
       {/* Navigation semaine */}
-      <div className="px-6 pb-3 flex items-center justify-between">
+      <div className="px-6 pb-3 flex items-center justify-between animate-fade-up" style={{ animationDelay: '60ms', animationFillMode: 'backwards' }}>
         <button
           onClick={() => setWeekRef(addDaysISO(weekRef, -7))}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary border border-subtle"
+          className="w-10 h-10 rounded-full flex items-center justify-center text-text-tertiary hover:text-text-primary press-down transition-colors surface-card"
           aria-label="Semaine précédente"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -263,10 +263,10 @@ export default function Training() {
           </svg>
         </button>
         <div className="text-center">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-heat-amber">
-            {isThisWeek ? 'CETTE SEMAINE' : 'SEMAINE'}
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-heat-amber font-bold">
+            {isThisWeek ? "Cette semaine" : "Semaine"}
           </div>
-          <div className="font-display font-bold text-base text-text-primary">
+          <div className="font-display font-bold text-base text-text-primary mt-0.5" style={{ letterSpacing: '-0.01em' }}>
             {dateFromISO(monday).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
             {' — '}
             {dateFromISO(sunday).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
