@@ -120,7 +120,7 @@ export default function EditEntry() {
         </div>
 
         {/* Quantity */}
-        <div className="mx-6 mb-5 p-6 bg-bg-surface1 border border-subtle rounded-2xl text-center">
+        <div className="mx-6 mb-5 p-6 surface-card rounded-2xl text-center">
           <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3">
             Quantité
           </div>
@@ -161,7 +161,7 @@ export default function EditEntry() {
         </div>
 
         {/* Nutrition values */}
-        <div className="mx-6 mb-6 p-5 bg-bg-surface1 border border-subtle rounded-2xl">
+        <div className="mx-6 mb-6 p-5 surface-card rounded-2xl">
           <div className="font-display font-bold text-[11px] uppercase tracking-[0.12em] text-text-tertiary mb-3">
             Valeurs pour {quantity} g
           </div>

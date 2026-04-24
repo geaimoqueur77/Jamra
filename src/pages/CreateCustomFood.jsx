@@ -31,7 +31,7 @@ function TextInput({ value, onChange, placeholder, ...rest }) {
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full px-4 py-3 bg-bg-surface1 border border-subtle rounded-xl text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-heat-orange transition-colors"
+      className="w-full px-4 py-3 surface-card rounded-xl text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-heat-orange transition-colors"
       {...rest}
     />
   );
@@ -47,7 +47,7 @@ function NumberInput({ value, onChange, placeholder = '0', step = '0.1', min = '
       placeholder={placeholder}
       step={step}
       min={min}
-      className="w-full px-4 py-3 bg-bg-surface1 border border-subtle rounded-xl font-mono text-sm text-text-primary tabular-nums text-right focus:outline-none focus:border-heat-orange transition-colors"
+      className="w-full px-4 py-3 surface-card rounded-xl font-mono text-sm text-text-primary tabular-nums text-right focus:outline-none focus:border-heat-orange transition-colors"
     />
   );
 }
@@ -186,7 +186,7 @@ export default function CreateCustomFood() {
 
       <div className="flex-1 overflow-y-auto px-6 pt-2 pb-6">
         {/* Info */}
-        <div className="mb-5 p-3 bg-bg-surface1 border border-subtle rounded-xl">
+        <div className="mb-5 p-3 surface-card rounded-xl">
           <div className="font-mono text-[10px] tracking-[0.1em] text-text-tertiary uppercase">
             Les valeurs sont saisies pour <span className="text-heat-amber font-bold">100 g</span> du produit
           </div>

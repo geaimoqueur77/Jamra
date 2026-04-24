@@ -42,7 +42,7 @@ function MemberRow({ member, myUserId, isOwner, onRemove }) {
   const isMemberOwner = member.role === 'owner';
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-bg-surface1 border border-subtle mb-1.5">
+    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg surface-card mb-1.5">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-heat-amber to-heat-orange flex items-center justify-center text-white font-display font-bold text-sm flex-shrink-0">
           {(member.profiles?.nom || '?').charAt(0).toUpperCase()}
@@ -90,7 +90,7 @@ function MemberRow({ member, myUserId, isOwner, onRemove }) {
 function InvitationRow({ invitation, onRevoke }) {
   const [confirming, setConfirming] = useState(false);
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg bg-bg-surface1 border border-dashed border-subtle mb-1.5">
+    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg surface-card border-dashed mb-1.5">
       <div className="flex items-center gap-3 flex-1 min-w-0">
         <div className="w-9 h-9 rounded-full bg-bg-surface2 flex items-center justify-center text-text-tertiary">
           ✉️

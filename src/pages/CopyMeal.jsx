@@ -105,7 +105,7 @@ export default function CopyMeal() {
           </div>
 
           {/* Date source */}
-          <div className="mb-3 p-4 bg-bg-surface1 border border-subtle rounded-2xl">
+          <div className="mb-3 p-4 surface-card rounded-2xl">
             <label className="font-mono text-[10px] tracking-[0.1em] uppercase text-text-tertiary">
               Date
             </label>
@@ -148,7 +148,7 @@ export default function CopyMeal() {
           </div>
 
           {/* Repas source */}
-          <div className="p-4 bg-bg-surface1 border border-subtle rounded-2xl">
+          <div className="p-4 surface-card rounded-2xl">
             <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-text-tertiary mb-2">
               Repas à copier
             </div>
@@ -186,7 +186,7 @@ export default function CopyMeal() {
 
         {/* Aperçu */}
         {srcEntries.length > 0 ? (
-          <div className="mb-5 p-4 bg-bg-surface1 border border-subtle rounded-2xl">
+          <div className="mb-5 p-4 surface-card rounded-2xl">
             <div className="flex justify-between items-center mb-3">
               <div className="font-display font-bold text-[11px] uppercase tracking-[0.12em] text-text-tertiary">
                 Aperçu ({srcEntries.length})

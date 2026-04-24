@@ -87,19 +87,16 @@ export default function StepGoal({ data, onNext, onBack }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col animate-fade-in">
+    <div className="flex-1 flex flex-col">
       <div className="flex-1 px-6 py-4 overflow-y-auto">
-        <div className="font-mono text-[11px] tracking-[0.3em] uppercase text-heat-orange mb-2">
-          Étape 3 / 4
-        </div>
-        <h2 className="font-display font-black text-3xl mb-2 leading-none">
+        <h2 className="font-display font-semibold text-3xl mb-2 leading-[1.05] text-text-primary" style={{ letterSpacing: '-0.02em' }}>
           Quel objectif ?
         </h2>
-        <p className="text-text-secondary text-sm mb-8">
+        <p className="text-text-secondary text-[14px] mb-8 leading-relaxed">
           Tout se calibre à partir d'ici.
         </p>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 stagger-1">
           <div>
             <label className="font-body font-semibold text-sm text-text-primary mb-2 block">
               Objectif principal

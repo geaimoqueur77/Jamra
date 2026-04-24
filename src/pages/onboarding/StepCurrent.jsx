@@ -55,19 +55,16 @@ export default function StepCurrent({ data, onNext, onBack }) {
   };
 
   return (
-    <div className="flex-1 flex flex-col animate-fade-in">
+    <div className="flex-1 flex flex-col">
       <div className="flex-1 px-6 py-4 overflow-y-auto">
-        <div className="font-mono text-[11px] tracking-[0.3em] uppercase text-heat-orange mb-2">
-          Étape 2 / 4
-        </div>
-        <h2 className="font-display font-black text-3xl mb-2 leading-none">
+        <h2 className="font-display font-semibold text-3xl mb-2 leading-[1.05] text-text-primary" style={{ letterSpacing: '-0.02em' }}>
           Où en es-tu ?
         </h2>
-        <p className="text-text-secondary text-sm mb-8">
+        <p className="text-text-secondary text-[14px] mb-8 leading-relaxed">
           Point de départ et habitudes actuelles.
         </p>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 stagger-1">
           <TextField
             label="Poids actuel"
             type="number"
