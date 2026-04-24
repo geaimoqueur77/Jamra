@@ -51,14 +51,14 @@ export default function Header({
 
   // greeting (default)
   return (
-    <div className="flex justify-between items-center px-6 py-4 safe-pt">
-      <div className="flex flex-col gap-0.5">
+    <div className="flex justify-between items-start px-6 pt-4 pb-3 safe-pt animate-fade-up">
+      <div className="flex flex-col gap-1">
         {eyebrow && (
-          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary">
+          <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-heat-amber font-bold">
             {eyebrow}
           </div>
         )}
-        <div className="font-display font-bold text-[22px] tracking-tight">
+        <div className="font-display font-semibold text-[26px] leading-[1.05] text-text-primary" style={{ letterSpacing: '-0.02em' }}>
           {title}
         </div>
       </div>

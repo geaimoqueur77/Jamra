@@ -19,6 +19,7 @@ import ProgressRing from '../components/ui/ProgressRing';
 import ProgressBar from '../components/ui/ProgressBar';
 import { InsightsRow } from '../components/insights/InsightCard';
 import TodayActivityCard from '../components/home/TodayActivityCard';
+import AnimatedCounter from '../components/ui/AnimatedCounter';
 import useStrava from '../hooks/useStrava';
 import { getKcalBurnedForDate } from '../lib/strava';
 import {
@@ -35,99 +36,141 @@ const MEAL_CONFIG = [
   { key: 'collation',  label: 'Collations',     illustration: SnackIllustration },
 ];
 
-function MacroRow({ name, current, target, delay, variant = 'heat' }) {
-  const ratio = target > 0 ? current / target : 0;
+function MacroMiniCard({ label, current, target, color }) {
+  const ratio = target > 0 ? Math.min(1.2, current / target) : 0;
+  const pct = Math.round(ratio * 100);
+  const over = ratio > 1;
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex justify-between items-baseline">
-        <div className="font-body font-semibold text-[13px] text-text-primary">{name}</div>
-        <div className="font-mono text-xs text-text-secondary">
-          <span className="text-text-primary font-semibold">{formatNumber(current, { decimals: current < 10 ? 1 : 0 })}</span>
-          {' / '}{target} g
-        </div>
+    <div className="surface-card rounded-xl px-3 py-3 text-center hover-lift">
+      <div className="font-display font-bold text-lg leading-none tabular" style={{ letterSpacing: '-0.02em' }}>
+        <AnimatedCounter value={current} decimals={current < 10 ? 1 : 0} />
       </div>
-      <ProgressBar value={ratio} delay={delay} variant={variant} />
+      <div className="font-mono text-[9px] text-text-tertiary uppercase tracking-wider mt-1">
+        {label} · {target}g
+      </div>
+      <div className="h-1 bg-bg-surface2 rounded-full mt-2.5 relative overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-1000 ease-out-quart"
+          style={{
+            width: `${Math.min(100, pct)}%`,
+            background: over ? '#FF1744' : color,
+            animationDelay: '400ms',
+          }}
+        />
+      </div>
     </div>
   );
 }
+
+const MEAL_ACCENTS = {
+  petit_dej: { color: '#FFAA33', bg: 'rgba(255,170,51,0.12)' },
+  dejeuner:  { color: '#FF4D00', bg: 'rgba(255,77,0,0.12)' },
+  diner:     { color: '#FF1744', bg: 'rgba(255,23,68,0.12)' },
+  collation: { color: '#9B7AFF', bg: 'rgba(155,122,255,0.12)' },
+};
 
 function MealCard({ mealKey, label, Illustration, entries, onAdd, onEditEntry }) {
   const navigate = useNavigate();
   const totalKcal = entries.reduce((sum, e) => sum + (e.kcal_snapshot || 0), 0);
   const isEmpty = entries.length === 0;
+  const accent = MEAL_ACCENTS[mealKey] || MEAL_ACCENTS.collation;
 
   if (isEmpty) {
     return (
       <button
         onClick={onAdd}
-        className="w-full mb-3 rounded-2xl border border-dashed border-strong py-6 px-5 text-center hover:border-heat-orange hover:bg-[rgba(255,77,0,0.04)] transition-all duration-200"
+        className="w-full mb-2 rounded-2xl py-4 px-4 press-down text-left group transition-all"
+        style={{
+          background: 'transparent',
+          border: '1px dashed rgba(255,255,255,0.1)',
+        }}
       >
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Illustration size={32} />
-          <div className="font-display font-bold text-[15px] uppercase tracking-[0.06em]">
-            {label}
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+            style={{ background: accent.bg }}
+          >
+            <Illustration size={22} />
           </div>
-        </div>
-        <div className="font-body text-[13px] text-text-tertiary font-medium">
-          Pas encore saisi
-        </div>
-        <div className="font-display font-bold text-xs uppercase tracking-[0.1em] text-heat-orange mt-2">
-          + Ajouter
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-bold text-sm uppercase tracking-[0.04em] text-text-primary">
+              {label}
+            </div>
+            <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase mt-0.5">
+              Pas encore saisi
+            </div>
+          </div>
+          <div
+            className="font-display font-bold text-[11px] uppercase tracking-[0.1em] transition-colors"
+            style={{ color: accent.color }}
+          >
+            + Ajouter
+          </div>
         </div>
       </button>
     );
   }
 
+  const preview = entries.slice(0, 2).map(e => e.aliment_nom_snapshot?.split(',')[0]).filter(Boolean).join(' · ');
+  const moreCount = entries.length > 2 ? ` +${entries.length - 2}` : '';
+
   return (
-    <div className="mb-3 rounded-2xl border border-subtle bg-bg-surface1 p-4">
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-3">
-          <Illustration size={36} />
-          <div>
-            <div className="font-display font-bold text-[15px] uppercase tracking-[0.06em] text-text-primary">
-              {label}
-            </div>
-            <div className="font-mono text-[10px] text-text-tertiary">
-              {entries.length} entrée{entries.length > 1 ? 's' : ''}
-            </div>
+    <div className="mb-2 surface-card rounded-2xl overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={onAdd}
+        className="w-full px-4 py-3 flex items-center gap-3 press-down"
+      >
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{ background: accent.bg }}
+        >
+          <Illustration size={22} />
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <div className="font-display font-bold text-sm uppercase tracking-[0.04em] text-text-primary">
+            {label}
+          </div>
+          <div className="font-mono text-[10px] text-text-tertiary tracking-wide mt-0.5 truncate">
+            {preview}{moreCount}
           </div>
         </div>
-        <div>
-          <span className="font-display font-bold text-xl text-heat-amber">{formatNumber(totalKcal)}</span>
-          <span className="font-mono text-[10px] text-text-tertiary ml-1 tracking-wider">KCAL</span>
+        <div className="text-right flex-shrink-0">
+          <div className="font-display font-bold text-lg leading-none tabular" style={{ color: accent.color, letterSpacing: '-0.02em' }}>
+            {formatNumber(totalKcal)}
+          </div>
+          <div className="font-mono text-[9px] text-text-tertiary tracking-wider uppercase mt-1">
+            kcal
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col">
+      </button>
+
+      {/* Divider + entries (cliquables pour éditer) */}
+      <div className="border-t border-subtle">
         {entries.map((e, idx) => (
           <button
             key={e.id}
             onClick={() => onEditEntry(e.id)}
             className={`
-              flex justify-between items-baseline py-2 px-1 text-left rounded-md
-              hover:bg-bg-surface2 transition-colors
+              w-full flex justify-between items-baseline py-2 px-4 text-left
+              hover:bg-white/3 transition-colors press-down
               ${idx > 0 ? 'border-t border-subtle' : ''}
             `}
           >
             <div className="flex-1 min-w-0 pr-2">
-              <span className="font-body text-[13px] text-text-secondary font-medium">
+              <span className="font-body text-[13px] text-text-secondary truncate">
                 {e.aliment_nom_snapshot}
               </span>
-              <span className="font-mono text-[11px] text-text-tertiary ml-1">
-                · {e.quantite_g} g
+              <span className="font-mono text-[10px] text-text-tertiary ml-1.5 tabular">
+                {e.quantite_g} g
               </span>
             </div>
-            <span className="font-mono text-xs text-text-primary font-medium">
+            <span className="font-mono text-xs text-text-primary font-medium tabular">
               {formatNumber(e.kcal_snapshot)}
             </span>
           </button>
         ))}
       </div>
-      <button
-        onClick={onAdd}
-        className="w-full mt-3 py-2 rounded-lg border border-dashed border-subtle text-text-tertiary hover:text-heat-orange hover:border-heat-orange font-display font-bold text-xs uppercase tracking-[0.1em] transition-colors"
-      >
-        + Ajouter
-      </button>
     </div>
   );
 }
@@ -219,19 +262,33 @@ export default function Home() {
     navigate(`/ajout?meal=${mealKey}&date=${today}`);
   };
 
+  // Greeting personnalisé selon l'heure
+  const hour = todayDate.getHours();
+  const greeting = hour < 5 ? 'Bonne nuit' : hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const firstName = (profile?.nom || '').split(' ')[0] || 'Ghali';
+  const initial = firstName.charAt(0).toUpperCase();
+
   return (
     <div>
       <Header
         variant="greeting"
-        eyebrow={formatDayEyebrow(todayDate)}
-        title={formatDateHeader(todayDate)}
+        eyebrow={`${formatDayEyebrow(todayDate)} · ${formatDateHeader(todayDate).split(' ').slice(0, 2).join(' ')}`}
+        title={`${greeting}, ${firstName}`}
         action={
-          <IconButton onClick={() => navigate('/profil')} aria-label="Profil">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </IconButton>
+          <button
+            onClick={() => navigate('/profil')}
+            className="w-10 h-10 rounded-full flex items-center justify-center press-down transition-all"
+            style={{
+              background: 'rgba(255, 170, 51, 0.08)',
+              border: '0.5px solid rgba(255, 170, 51, 0.3)',
+              color: '#FFAA33',
+              fontWeight: 500,
+              fontSize: '15px',
+            }}
+            aria-label="Profil"
+          >
+            {initial}
+          </button>
         }
       />
 
@@ -242,37 +299,29 @@ export default function Home() {
       <TodayActivityCard date={today} isStravaConnected={isStravaConnected} />
 
       {/* Hero Ring */}
-      <div className="px-6 py-7 flex flex-col items-center">
-        <ProgressRing value={ratio} size={220}>
-          <div className="font-display font-extrabold text-[56px] leading-none tracking-tight text-heat-gradient">
-            {formatNumber(consumed)}
+      <div className="px-6 py-6 flex flex-col items-center animate-fade-up">
+        <ProgressRing value={ratio} size={224} strokeWidth={12} showTicks>
+          <div className="text-heat-gradient font-display font-extrabold leading-none tracking-tight" style={{ fontSize: '56px' }}>
+            <AnimatedCounter value={consumed} />
           </div>
-          <div className="font-mono text-xs text-text-tertiary mt-1 tracking-wider">
+          <div className="font-mono text-[11px] text-text-tertiary mt-2 tracking-[0.18em] uppercase tabular">
             / {formatNumber(target)} kcal
           </div>
-          <div className="font-body font-semibold text-[11px] uppercase tracking-[0.2em] text-text-secondary mt-2">
-            {over > 0 ? 'Dépassé' : 'Consommées'}
+          <div className="mt-3 font-display font-bold text-[11px] uppercase tracking-[0.2em]"
+               style={{ color: over > 0 ? '#FFAA33' : 'rgba(255, 170, 51, 0.85)' }}>
+            {over > 0 ? `+${formatNumber(over)} dépassé` : `${formatNumber(remaining)} restantes`}
           </div>
         </ProgressRing>
 
-        <div className="flex gap-5 mt-5">
+        <div className="flex gap-4 mt-6 surface-card rounded-2xl px-5 py-3.5">
           <div className="flex flex-col items-center gap-0.5">
-            <div className={`font-display font-bold text-lg ${over > 0 ? 'text-danger' : 'text-heat-orange'}`}>
-              {over > 0 ? `+${formatNumber(over)}` : formatNumber(remaining)}
-            </div>
-            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
-              {over > 0 ? 'Dépassement' : 'Restant'}
-            </div>
-          </div>
-          <div className="w-px bg-subtle" />
-          <div className="flex flex-col items-center gap-0.5">
-            <div className="font-display font-bold text-lg">
+            <div className="font-display font-bold text-lg leading-none tabular" style={{ letterSpacing: '-0.02em' }}>
               {formatNumber(metrics.tdee)}
             </div>
-            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
+            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary mt-1.5 flex items-center gap-1">
               Dépense
               {metrics.strava_adjustment > 0 && (
-                <span className="text-[#FC4C02] font-bold ml-1">
+                <span className="text-[#FC4C02] font-bold tabular">
                   +{formatNumber(metrics.strava_adjustment)}
                 </span>
               )}
@@ -280,56 +329,88 @@ export default function Home() {
           </div>
           <div className="w-px bg-subtle" />
           <div className="flex flex-col items-center gap-0.5">
-            <div className="font-display font-bold text-lg">
-              −{formatNumber(metrics.deficit_kcal)}
+            <div className={`font-display font-bold text-lg leading-none tabular ${over > 0 ? 'text-danger' : 'text-heat-orange'}`} style={{ letterSpacing: '-0.02em' }}>
+              {over > 0 ? `+${formatNumber(over)}` : `−${formatNumber(metrics.deficit_kcal)}`}
             </div>
-            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
-              Déficit
+            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary mt-1.5">
+              {over > 0 ? 'Excédent' : 'Déficit'}
             </div>
           </div>
+          {metrics.adaptation_pct < 0 && (
+            <>
+              <div className="w-px bg-subtle" />
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="font-display font-bold text-lg leading-none tabular text-heat-amber" style={{ letterSpacing: '-0.02em' }}>
+                  {Math.round(metrics.adaptation_pct * 100)}%
+                </div>
+                <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary mt-1.5">
+                  Adapté
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* Macros */}
-      <div className="px-6 py-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary">
-            Macros du jour
+      <div className="px-6 py-5 animate-fade-up" style={{ animationDelay: '120ms', animationFillMode: 'backwards' }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-display font-bold text-[11px] uppercase tracking-[0.15em] text-text-tertiary">
+            Macros
           </div>
-          <div className="font-mono text-[10px] text-text-tertiary tracking-wider">
-            EN GRAMMES
+          <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase">
+            Aujourd'hui
           </div>
         </div>
-        <div className="flex flex-col gap-3.5">
-          <MacroRow name="Protéines" current={totals.proteines} target={metrics.proteines_g} delay={100} />
-          <MacroRow name="Glucides"  current={totals.glucides}  target={metrics.glucides_g}  delay={200} />
-          <MacroRow name="Lipides"   current={totals.lipides}   target={metrics.lipides_g}   delay={300} />
-          <MacroRow name="Fibres"    current={totals.fibres}    target={metrics.fibres_g}    delay={400} variant="success" />
+        <div className="grid grid-cols-4 gap-2 stagger-1">
+          <MacroMiniCard label="Prot" current={totals.proteines} target={metrics.proteines_g} color="#FFAA33" />
+          <MacroMiniCard label="Gluc" current={totals.glucides}  target={metrics.glucides_g}  color="#FF4D00" />
+          <MacroMiniCard label="Lip"  current={totals.lipides}   target={metrics.lipides_g}   color="#FF1744" />
+          <MacroMiniCard label="Fib"  current={totals.fibres}    target={metrics.fibres_g}    color="#00E676" />
         </div>
       </div>
 
       {/* Repas */}
-      <div className="px-6 py-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary">
+      <div className="px-6 py-5 pb-24 animate-fade-up" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-display font-bold text-[11px] uppercase tracking-[0.15em] text-text-tertiary">
             Repas
           </div>
-          <div className="font-mono text-[10px] text-text-tertiary tracking-wider">
-            {Object.values(meals).filter(m => m.length > 0).length} / 4 SAISIS
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1">
+              {MEAL_CONFIG.map(({ key }) => {
+                const hasEntries = (meals[key] || []).length > 0;
+                return (
+                  <div
+                    key={key}
+                    className="w-1.5 h-1.5 rounded-full transition-all"
+                    style={{
+                      background: hasEntries ? '#FFAA33' : 'rgba(255,255,255,0.15)',
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div className="font-mono text-[10px] text-text-tertiary tracking-wider uppercase tabular">
+              {Object.values(meals).filter(m => m.length > 0).length}/4
+            </div>
           </div>
         </div>
 
-        {MEAL_CONFIG.map(({ key, label, illustration: Illustration }) => (
-          <MealCard
-            key={key}
-            mealKey={key}
-            label={label}
-            Illustration={Illustration}
-            entries={meals[key] || []}
-            onAdd={() => handleAdd(key)}
-            onEditEntry={(entryId) => navigate(`/edit/${entryId}`)}
-          />
-        ))}
+        <div className="stagger-1">
+          {MEAL_CONFIG.map(({ key, label, illustration: Illustration }) => (
+            <div key={key} className="animate-fade-up" style={{ animationFillMode: 'backwards' }}>
+              <MealCard
+                mealKey={key}
+                label={label}
+                Illustration={Illustration}
+                entries={meals[key] || []}
+                onAdd={() => handleAdd(key)}
+                onEditEntry={(entryId) => navigate(`/edit/${entryId}`)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
