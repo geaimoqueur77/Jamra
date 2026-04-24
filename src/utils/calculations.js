@@ -122,7 +122,7 @@ export function calculateMacros({ poids_kg, target_kcal, objectif }) {
 // ==========================================================================
 // CALCUL COMPLET à partir d'un profil
 // ==========================================================================
-export function computeProfileMetrics(profile) {
+export function computeProfileMetrics(profile, { extraKcalBurned = 0 } = {}) {
   if (!profile) return null;
 
   const age = calculateAge(profile.date_naissance);
@@ -134,7 +134,15 @@ export function computeProfileMetrics(profile) {
   });
   if (!bmr) return { age };
 
-  const tdee = calculateTDEE(bmr, profile.niveau_activite);
+  const tdeeBase = calculateTDEE(bmr, profile.niveau_activite);
+  // Le niveau d'activité déclaré dans l'onboarding inclut déjà une estimation
+  // d'activité sportive moyenne. Pour éviter la double comptabilisation, on ne
+  // rajoute qu'une partie (70%) des kcal brûlées réelles via Strava.
+  // 70% est un compromis : ça reconnaît l'effort réel tout en gardant une
+  // pression modérée sur le déficit.
+  const strava_adjustment = Math.round(extraKcalBurned * 0.7);
+  const tdee = tdeeBase + strava_adjustment;
+
   const { target: target_kcal, deficit } = calculateTargetCalories(tdee, profile.scenario);
   const macros = calculateMacros({
     poids_kg: profile.poids_initial_kg,
@@ -145,8 +153,11 @@ export function computeProfileMetrics(profile) {
   return {
     age,
     bmr,
+    tdee_base: tdeeBase,
     tdee,
+    strava_adjustment,
     target_kcal,
+    target_kcal_base: target_kcal - strava_adjustment,
     deficit_kcal: deficit,
     ...macros,
   };

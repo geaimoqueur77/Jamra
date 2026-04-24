@@ -17,6 +17,9 @@ import IconButton from '../components/ui/IconButton';
 import ProgressRing from '../components/ui/ProgressRing';
 import ProgressBar from '../components/ui/ProgressBar';
 import { InsightsRow } from '../components/insights/InsightCard';
+import TodayActivityCard from '../components/home/TodayActivityCard';
+import useStrava from '../hooks/useStrava';
+import { getKcalBurnedForDate } from '../lib/strava';
 import {
   BreakfastIllustration,
   LunchIllustration,
@@ -139,7 +142,23 @@ export default function Home() {
   const meals = useLiveQuery(() => getMealsForDate(today), [today]);
   const weights = useLiveQuery(getAllWeights) || [];
 
-  const metrics = profile ? computeProfileMetrics(profile) : null;
+  // Strava : kcal brûlées aujourd'hui pour ajustement dynamique du TDEE
+  const { isConnected: isStravaConnected, connection } = useStrava();
+  const [kcalBurnedToday, setKcalBurnedToday] = useState(0);
+
+  useEffect(() => {
+    if (!isStravaConnected) {
+      setKcalBurnedToday(0);
+      return;
+    }
+    getKcalBurnedForDate(today)
+      .then(setKcalBurnedToday)
+      .catch(() => setKcalBurnedToday(0));
+  }, [today, isStravaConnected, connection?.last_synced_at]);
+
+  const metrics = profile
+    ? computeProfileMetrics(profile, { extraKcalBurned: kcalBurnedToday })
+    : null;
   const target = metrics?.target_kcal;
 
   const stats7d = useLiveQuery(
@@ -200,6 +219,9 @@ export default function Home() {
       {/* Insights contextuels (Phase 3) */}
       <InsightsRow insights={insights} onDismiss={handleDismiss} />
 
+      {/* Carte Activité du jour (Phase 5.A) */}
+      <TodayActivityCard date={today} isStravaConnected={isStravaConnected} />
+
       {/* Hero Ring */}
       <div className="px-6 py-7 flex flex-col items-center">
         <ProgressRing value={ratio} size={220}>
@@ -230,6 +252,11 @@ export default function Home() {
             </div>
             <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
               Dépense
+              {metrics.strava_adjustment > 0 && (
+                <span className="text-[#FC4C02] font-bold ml-1">
+                  +{formatNumber(metrics.strava_adjustment)}
+                </span>
+              )}
             </div>
           </div>
           <div className="w-px bg-subtle" />
