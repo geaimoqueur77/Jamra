@@ -105,22 +105,38 @@ export default function Profile() {
     <div>
       <Header variant="centered" title="Profil" />
 
-      <div className="px-6 py-4 flex flex-col gap-4">
+      <div className="px-6 py-4 flex flex-col gap-3 pb-24 stagger-1">
 
-        {/* Greeting */}
-        <div className="py-2">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-1">
-            Bonjour
+        {/* Hero card profil avec avatar */}
+        <div className="surface-featured rounded-2xl p-5 flex items-center gap-4 animate-fade-up">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 font-display font-bold text-2xl text-white"
+            style={{
+              background: 'linear-gradient(135deg, #FFAA33 0%, #FF4D00 50%, #FF1744 100%)',
+              boxShadow: '0 2px 12px rgba(255, 77, 0, 0.4)',
+            }}
+          >
+            {(profile.nom || profile.prenom || 'G').charAt(0).toUpperCase()}
           </div>
-          <div className="font-display font-bold text-3xl tracking-tight">
-            {profile.prenom} 👋
+          <div className="flex-1 min-w-0">
+            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-heat-amber font-bold mb-0.5">
+              Compte
+            </div>
+            <div className="font-display font-bold text-xl leading-tight text-text-primary truncate" style={{ letterSpacing: '-0.02em' }}>
+              {profile.nom || profile.prenom || 'Moi'}
+            </div>
+            {user?.email && (
+              <div className="font-mono text-[10px] text-text-tertiary tracking-wide truncate mt-0.5">
+                {user.email}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Profil */}
+        {/* Profil infos */}
         <Card>
-          <div className="font-display font-bold text-xs uppercase tracking-[0.12em] text-text-tertiary mb-3">
-            Profil
+          <div className="font-display font-bold text-[11px] uppercase tracking-[0.15em] text-text-tertiary mb-3">
+            Identité
           </div>
           <StatRow label="Âge" value={`${metrics.age} ans`} />
           <StatRow label="Sexe" value={profile.sexe === 'homme' ? 'Homme' : 'Femme'} />
@@ -194,41 +210,79 @@ export default function Profile() {
           <StatRow label="Fibres" value={`${metrics.fibres_g} g`} />
         </Card>
 
-        {/* Compte (Phase 4) */}
+        {/* Actions (Phase 4) */}
         <Card>
-          <div className="font-display font-bold text-xs uppercase tracking-[0.12em] text-text-tertiary mb-3">
-            Compte
+          <div className="font-display font-bold text-[11px] uppercase tracking-[0.15em] text-text-tertiary mb-3">
+            Mes espaces
           </div>
-          {user?.email && (
-            <div className="mb-3 pb-3 border-b border-subtle">
-              <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-text-tertiary mb-1">
-                Connecté avec
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => navigate('/metriques')}
+              className="press-down surface-card rounded-xl p-3 flex flex-col items-start gap-1 transition-all hover:border-heat-amber"
+              style={{ border: '0.5px solid rgba(255, 255, 255, 0.08)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFAA33" strokeWidth="1.8">
+                <line x1="12" y1="20" x2="12" y2="10"/>
+                <line x1="18" y1="20" x2="18" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="16"/>
+              </svg>
+              <div className="font-display font-bold text-[12px] uppercase tracking-[0.06em] text-text-primary mt-1">
+                Métriques
               </div>
-              <div className="font-body text-sm text-text-primary break-all">
-                {user.email}
+              <div className="font-mono text-[9px] tracking-wide text-text-tertiary">BMR · TDEE · zones</div>
+            </button>
+            <button
+              onClick={() => navigate('/entrainement')}
+              className="press-down surface-card rounded-xl p-3 flex flex-col items-start gap-1 transition-all hover:border-heat-orange"
+              style={{ border: '0.5px solid rgba(255, 255, 255, 0.08)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="1.8">
+                <path d="M13 4v7a2 2 0 0 1-2 2H5m0 0l4-4m-4 4l4 4"/>
+                <path d="M11 20v-7a2 2 0 0 1 2-2h6m0 0l-4-4m4 4l-4 4"/>
+              </svg>
+              <div className="font-display font-bold text-[12px] uppercase tracking-[0.06em] text-text-primary mt-1">
+                Entraînement
               </div>
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/metriques')}>
-              📊 Mes métriques
-            </Button>
-            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/entrainement')}>
-              🏃 Mon entraînement
-            </Button>
-            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/strava')}>
-              <span className="inline-flex items-center gap-2">
-                <span className="text-[#FC4C02] font-black">S</span>
-                Connecter Strava
-              </span>
-            </Button>
-            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/foyer')}>
-              🏠 Mon foyer
-            </Button>
-            <Button variant="outline" size="md" fullWidth onClick={handleLogout}>
-              Se déconnecter
-            </Button>
+              <div className="font-mono text-[9px] tracking-wide text-text-tertiary">Course · muscu</div>
+            </button>
+            <button
+              onClick={() => navigate('/strava')}
+              className="press-down surface-card rounded-xl p-3 flex flex-col items-start gap-1 transition-all hover:border-[#FC4C02]"
+              style={{ border: '0.5px solid rgba(255, 255, 255, 0.08)' }}
+            >
+              <div
+                className="w-[18px] h-[18px] rounded-[4px] flex items-center justify-center"
+                style={{ background: '#FC4C02' }}
+              >
+                <span className="font-display font-bold text-white text-[11px]">S</span>
+              </div>
+              <div className="font-display font-bold text-[12px] uppercase tracking-[0.06em] text-text-primary mt-1">
+                Strava
+              </div>
+              <div className="font-mono text-[9px] tracking-wide text-text-tertiary">Activités · zones</div>
+            </button>
+            <button
+              onClick={() => navigate('/foyer')}
+              className="press-down surface-card rounded-xl p-3 flex flex-col items-start gap-1 transition-all hover:border-heat-amber"
+              style={{ border: '0.5px solid rgba(255, 255, 255, 0.08)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFAA33" strokeWidth="1.8">
+                <path d="M3 9.75 12 3l9 6.75V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <path d="M9 22V12h6v10"/>
+              </svg>
+              <div className="font-display font-bold text-[12px] uppercase tracking-[0.06em] text-text-primary mt-1">
+                Mon foyer
+              </div>
+              <div className="font-mono text-[9px] tracking-wide text-text-tertiary">Partage famille</div>
+            </button>
           </div>
+
+          <button
+            onClick={handleLogout}
+            className="w-full mt-3 py-2.5 rounded-xl border border-subtle text-text-tertiary text-xs font-mono tracking-[0.12em] uppercase press-down hover:text-text-primary hover:border-text-tertiary transition-all"
+          >
+            Se déconnecter
+          </button>
         </Card>
 
         {/* Synchronisation (Phase 4.2) */}
