@@ -21,6 +21,7 @@ import TrainingPlanEditor from './pages/TrainingPlanEditor';
 import SessionDetail from './pages/SessionDetail';
 import StravaPage from './pages/Strava';
 import StravaCallback from './pages/auth/StravaCallback';
+import Metrics from './pages/Metrics';
 
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -117,6 +118,7 @@ export const router = createBrowserRouter([
           { path: '/entrainement/seance/:id', element: <SessionDetail /> },
           { path: '/strava', element: <StravaPage /> },
           { path: '/strava-callback', element: <StravaCallback /> },
+          { path: '/metriques', element: <Metrics /> },
         ],
       },
     ],

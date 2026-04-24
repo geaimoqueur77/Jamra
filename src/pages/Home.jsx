@@ -10,6 +10,7 @@ import {
   todayISO,
 } from '../db/database';
 import { computeProfileMetrics } from '../utils/calculations';
+import { analyzeAdaptation } from '../utils/adaptiveMetrics';
 import { formatNumber, formatDayEyebrow, formatDateHeader, addDaysISO } from '../utils/format';
 import { computeInsights, getDismissals, dismissInsight, clearOldDismissals } from '../utils/insights';
 import Header from '../components/layout/Header';
@@ -156,8 +157,26 @@ export default function Home() {
       .catch(() => setKcalBurnedToday(0));
   }, [today, isStravaConnected, connection?.last_synced_at]);
 
+  // Adaptation métabolique observée (refresh périodique, pas temps-réel)
+  const [adaptationPct, setAdaptationPct] = useState(0);
+  useEffect(() => {
+    if (!profile) return;
+    analyzeAdaptation(profile, 28)
+      .then(result => {
+        if (result?.adaptation?.detected) {
+          setAdaptationPct(result.adaptation.adaptation_pct);
+        } else {
+          setAdaptationPct(0);
+        }
+      })
+      .catch(() => setAdaptationPct(0));
+  }, [profile?.id, profile?.poids_actuel_kg]);
+
   const metrics = profile
-    ? computeProfileMetrics(profile, { extraKcalBurned: kcalBurnedToday })
+    ? computeProfileMetrics(profile, {
+        extraKcalBurned: kcalBurnedToday,
+        adaptationPct,
+      })
     : null;
   const target = metrics?.target_kcal;
 
