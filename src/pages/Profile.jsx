@@ -213,6 +213,12 @@ export default function Profile() {
             <Button variant="outline" size="md" fullWidth onClick={() => navigate('/entrainement')}>
               🏃 Mon entraînement
             </Button>
+            <Button variant="outline" size="md" fullWidth onClick={() => navigate('/strava')}>
+              <span className="inline-flex items-center gap-2">
+                <span className="text-[#FC4C02] font-black">S</span>
+                Connecter Strava
+              </span>
+            </Button>
             <Button variant="outline" size="md" fullWidth onClick={() => navigate('/foyer')}>
               🏠 Mon foyer
             </Button>

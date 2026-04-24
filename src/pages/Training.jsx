@@ -119,6 +119,11 @@ function SessionCard({ session, poidsKg, onToggle, onClick }) {
                 ~{formatNumber(kcalEstimees)} kcal
               </span>
             )}
+            {session.strava_activity_id && (
+              <span className="font-mono text-[10px] tracking-wider uppercase text-[#FC4C02] font-semibold">
+                ⚡ Strava
+              </span>
+            )}
           </div>
           <button
             onClick={onClick}

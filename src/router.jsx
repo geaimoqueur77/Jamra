@@ -19,6 +19,8 @@ import Workspace from './pages/Workspace';
 import Training from './pages/Training';
 import TrainingPlanEditor from './pages/TrainingPlanEditor';
 import SessionDetail from './pages/SessionDetail';
+import StravaPage from './pages/Strava';
+import StravaCallback from './pages/auth/StravaCallback';
 
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -113,6 +115,8 @@ export const router = createBrowserRouter([
           { path: '/entrainement', element: <Training /> },
           { path: '/entrainement/config', element: <TrainingPlanEditor /> },
           { path: '/entrainement/seance/:id', element: <SessionDetail /> },
+          { path: '/strava', element: <StravaPage /> },
+          { path: '/strava-callback', element: <StravaCallback /> },
         ],
       },
     ],
