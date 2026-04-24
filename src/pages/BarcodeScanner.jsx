@@ -142,24 +142,33 @@ export default function BarcodeScanner() {
       <div className="flex-1 overflow-y-auto pb-4">
         {/* Caméra */}
         {supportsNativeScanner && (
-          <div className="px-6 mb-4">
-            <div className="font-display font-bold text-[11px] uppercase tracking-[0.12em] text-text-tertiary mb-3">
+          <div className="px-6 mb-5 animate-fade-up">
+            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-3 font-bold">
               Scanner avec la caméra
             </div>
             {!cameraActive ? (
               <button
                 onClick={startCamera}
-                className="w-full aspect-video rounded-2xl border-2 border-dashed border-strong flex flex-col items-center justify-center gap-3 hover:border-heat-orange hover:bg-[rgba(255,77,0,0.04)] transition-all"
+                className="w-full aspect-video rounded-2xl flex flex-col items-center justify-center gap-3 press-down transition-all"
+                style={{
+                  border: '1px dashed rgba(255, 77, 0, 0.3)',
+                  background: 'linear-gradient(180deg, rgba(255, 77, 0, 0.04), transparent)',
+                }}
               >
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-heat-orange">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-                <div className="font-display font-bold text-sm uppercase tracking-[0.1em] text-text-primary">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(255, 77, 0, 0.12)' }}
+                >
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FF4D00" strokeWidth="1.8">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </div>
+                <div className="font-display font-bold text-sm uppercase tracking-[0.08em] text-text-primary">
                   Activer la caméra
                 </div>
-                <div className="font-mono text-[10px] text-text-tertiary tracking-wider text-center px-4">
-                  Autorise l'accès quand le navigateur te le demande
+                <div className="font-mono text-[10px] text-text-tertiary tracking-wide text-center px-4">
+                  Autorise l'accès au navigateur
                 </div>
               </button>
             ) : (
@@ -170,14 +179,41 @@ export default function BarcodeScanner() {
                   playsInline
                   muted
                 />
-                {/* Cadre de visée */}
+                {/* Viewfinder avec coins premium */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="w-4/5 h-20 border-2 border-heat-amber rounded-lg shadow-[0_0_20px_rgba(255,170,51,0.4)]" />
+                  <div className="relative" style={{ width: '72%', height: '30%' }}>
+                    {/* 4 coins */}
+                    {['tl', 'tr', 'bl', 'br'].map(corner => {
+                      const positions = {
+                        tl: { top: 0, left: 0, borderTop: '2px solid #FFAA33', borderLeft: '2px solid #FFAA33', borderTopLeftRadius: '8px' },
+                        tr: { top: 0, right: 0, borderTop: '2px solid #FFAA33', borderRight: '2px solid #FFAA33', borderTopRightRadius: '8px' },
+                        bl: { bottom: 0, left: 0, borderBottom: '2px solid #FFAA33', borderLeft: '2px solid #FFAA33', borderBottomLeftRadius: '8px' },
+                        br: { bottom: 0, right: 0, borderBottom: '2px solid #FFAA33', borderRight: '2px solid #FFAA33', borderBottomRightRadius: '8px' },
+                      };
+                      return (
+                        <div
+                          key={corner}
+                          className="absolute"
+                          style={{ width: '24px', height: '24px', ...positions[corner] }}
+                        />
+                      );
+                    })}
+                    {/* Ligne de scan animée */}
+                    <div
+                      className="absolute left-0 right-0 animate-pulse-ring"
+                      style={{
+                        top: '50%',
+                        height: '1px',
+                        background: 'linear-gradient(90deg, transparent, #FFAA33, transparent)',
+                        boxShadow: '0 0 8px rgba(255, 170, 51, 0.8)',
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2.5 right-2.5">
                   <button
                     onClick={stopCamera}
-                    className="w-8 h-8 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white hover:bg-black/70"
+                    className="w-9 h-9 rounded-full glass flex items-center justify-center text-white press-down"
                     aria-label="Arrêter"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -186,13 +222,20 @@ export default function BarcodeScanner() {
                     </svg>
                   </button>
                 </div>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-mono text-[10px] text-white/80 tracking-[0.15em] uppercase bg-black/50 backdrop-blur px-3 py-1 rounded-full">
+                <div
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 font-mono text-[10px] text-white/90 tracking-[0.15em] uppercase font-bold px-3.5 py-1.5 rounded-full glass"
+                >
                   Vise le code-barres
                 </div>
               </div>
             )}
             {cameraError && (
-              <div className="mt-3 p-3 rounded-xl border border-danger bg-[rgba(255,23,68,0.05)] text-danger text-sm">
+              <div className="mt-3 p-3 rounded-xl text-danger text-sm animate-fade-up"
+                style={{
+                  background: 'rgba(255, 23, 68, 0.05)',
+                  border: '0.5px solid rgba(255, 23, 68, 0.3)',
+                }}
+              >
                 {cameraError}
               </div>
             )}
@@ -202,15 +245,15 @@ export default function BarcodeScanner() {
         {/* Séparateur */}
         {supportsNativeScanner && (
           <div className="px-6 mb-4 flex items-center gap-3">
-            <div className="flex-1 h-px bg-subtle" />
-            <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary">ou</div>
-            <div className="flex-1 h-px bg-subtle" />
+            <div className="flex-1 h-px" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
+            <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary font-bold">ou</div>
+            <div className="flex-1 h-px" style={{ background: 'rgba(255, 255, 255, 0.08)' }} />
           </div>
         )}
 
         {/* Saisie manuelle */}
         <div className="px-6">
-          <div className="font-display font-bold text-[11px] uppercase tracking-[0.12em] text-text-tertiary mb-3">
+          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-3 font-bold">
             Saisie manuelle
           </div>
           <div className="p-4 bg-bg-surface1 border border-subtle rounded-2xl">

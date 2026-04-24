@@ -5,6 +5,7 @@ import { getProfile, todayISO } from '../db/database';
 import { computeProfileMetrics, calculateBMRMifflin, calculateAge, calculateHRMaxTanaka, calculateHRZones } from '../utils/calculations';
 import { analyzeAdaptation } from '../utils/adaptiveMetrics';
 import { analyzeZoneDistribution, ZONE_INFO } from '../utils/hrZones';
+import HRZoneBar from '../components/training/HRZoneBar';
 import { supabase } from '../lib/supabase';
 import { formatNumber, formatDateLong } from '../utils/format';
 import Header from '../components/layout/Header';
@@ -336,8 +337,27 @@ export default function Metrics() {
             <div className="text-text-tertiary text-sm mt-3">Analyse Strava en cours...</div>
           ) : zoneAnalysis ? (
             <>
-              <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-text-tertiary mt-3 mb-2">
-                Répartition sur 14 jours · {zoneAnalysis.totalTimeMinutes} min
+              {/* Nouvelle barre globale visuelle */}
+              <div className="mt-4 mb-4 p-4 rounded-xl surface-card">
+                <div className="flex items-baseline justify-between mb-3">
+                  <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary font-bold">
+                    Répartition 14 jours
+                  </div>
+                  <div className="font-mono text-[10px] text-text-tertiary tracking-wider tabular">
+                    {zoneAnalysis.totalTimeMinutes} min
+                  </div>
+                </div>
+                <HRZoneBar
+                  distribution={zoneAnalysis.pctByZone}
+                  times={zoneAnalysis.timeByZone}
+                  showLabels={true}
+                  height={36}
+                />
+              </div>
+
+              {/* Détail par zone */}
+              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-2 font-bold">
+                Détail par zone
               </div>
               {Object.entries(hrZones).map(([z, range]) => (
                 <ZoneBar
@@ -348,29 +368,50 @@ export default function Metrics() {
                   active={zoneAnalysis.pctByZone[z] > 0}
                 />
               ))}
+
               {zoneAnalysis.polarizationMessage && (
-                <div className={`mt-3 p-3 rounded-xl border ${
-                  zoneAnalysis.polarizationStatus === 'polarized' ? 'border-success bg-[rgba(0,230,118,0.05)]' :
-                  zoneAnalysis.polarizationStatus === 'balanced' ? 'border-subtle bg-bg-surface1' :
-                  'border-heat-amber bg-[rgba(255,170,51,0.05)]'
-                }`}>
-                  <div className="font-display font-bold text-xs uppercase tracking-[0.1em] mb-1">
-                    {zoneAnalysis.polarizationStatus === 'polarized' ? '✓ Polarisation idéale' :
-                     zoneAnalysis.polarizationStatus === 'balanced' ? 'Distribution équilibrée' :
-                     '⚠ Distribution à corriger'}
+                <div className="mt-4 p-3.5 rounded-xl animate-fade-up"
+                  style={{
+                    background:
+                      zoneAnalysis.polarizationStatus === 'polarized' ? 'rgba(0,230,118,0.05)' :
+                      zoneAnalysis.polarizationStatus === 'balanced' ? 'rgba(255,255,255,0.04)' :
+                      'rgba(255,170,51,0.06)',
+                    border:
+                      zoneAnalysis.polarizationStatus === 'polarized' ? '0.5px solid rgba(0,230,118,0.3)' :
+                      zoneAnalysis.polarizationStatus === 'balanced' ? '0.5px solid rgba(255,255,255,0.08)' :
+                      '0.5px solid rgba(255,170,51,0.3)',
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-base">
+                      {zoneAnalysis.polarizationStatus === 'polarized' ? '✓' :
+                       zoneAnalysis.polarizationStatus === 'balanced' ? '·' : '⚠'}
+                    </span>
+                    <span className="font-display font-bold text-[12px] uppercase tracking-[0.08em]"
+                      style={{
+                        color:
+                          zoneAnalysis.polarizationStatus === 'polarized' ? '#00E676' :
+                          zoneAnalysis.polarizationStatus === 'balanced' ? 'rgba(255,255,255,0.8)' :
+                          '#FFAA33',
+                      }}
+                    >
+                      {zoneAnalysis.polarizationStatus === 'polarized' ? 'Polarisation idéale' :
+                       zoneAnalysis.polarizationStatus === 'balanced' ? 'Distribution équilibrée' :
+                       'À corriger'}
+                    </span>
                   </div>
-                  <div className="text-sm text-text-secondary">
+                  <div className="text-[13px] text-text-secondary leading-relaxed">
                     {zoneAnalysis.polarizationMessage}
                   </div>
-                  <div className="font-mono text-[10px] text-text-tertiary mt-2 tracking-wider uppercase">
-                    Seiler 2010 : 75-85% Z1+Z2, 15-20% Z4+Z5
+                  <div className="font-mono text-[10px] text-text-tertiary mt-2 tracking-wide">
+                    Seiler 2010 · 75-85% Z1+Z2, 15-20% Z4+Z5
                   </div>
                 </div>
               )}
             </>
           ) : (
             <>
-              <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-text-tertiary mt-3 mb-2">
+              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mt-3 mb-2 font-bold">
                 Zones de référence
               </div>
               {Object.entries(hrZones).map(([z, range]) => (
