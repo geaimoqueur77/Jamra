@@ -36,6 +36,20 @@ const PPL_PLAN = {
 const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
 const REST_DURATION = 90; // secondes
 
+// Paliers poids : 0, 2.5, 5 … 200 kg (81 valeurs)
+const WEIGHT_OPTIONS = Array.from({ length: 81 }, (_, i) => +(i * 2.5).toFixed(1));
+// Reps : 1 … 30
+const REPS_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
+
+// Snap vers l'option la plus proche dans une liste
+function snapToOption(rawVal, options) {
+  const n = parseFloat(rawVal);
+  if (isNaN(n) || rawVal === '') return '';
+  return options.reduce((best, opt) =>
+    Math.abs(opt - n) < Math.abs(best - n) ? opt : best
+  ).toString();
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function vibrateShort() {
@@ -46,6 +60,52 @@ function vibrateDone() {
 }
 
 // ─── Composants UI ────────────────────────────────────────────────────────────
+
+const INPUT_CLS = 'flex-1 bg-bg-surface1 border border-subtle rounded-xl px-2 py-2.5 font-mono text-[14px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none disabled:opacity-50 text-center transition-colors min-w-0';
+
+/**
+ * SetInput — <select> natif sur mobile (picker iOS/Android), <input number> sur desktop.
+ * La valeur est toujours transmise comme string pour rester compatible avec updateSet.
+ */
+function SetInput({ value, onChange, kind, disabled, placeholder }) {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const options = kind === 'weight' ? WEIGHT_OPTIONS : REPS_OPTIONS;
+
+  if (isMobile) {
+    const selectVal = snapToOption(value, options);
+    return (
+      <select
+        value={selectVal}
+        disabled={disabled}
+        onChange={e => onChange(e.target.value)}
+        className={INPUT_CLS}
+        style={{ textAlignLast: 'center' }}
+      >
+        <option value="">{placeholder}</option>
+        {options.map(opt => (
+          <option key={opt} value={String(opt)}>
+            {kind === 'weight' ? `${opt} kg` : opt}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
+  return (
+    <input
+      type="number"
+      inputMode={kind === 'weight' ? 'decimal' : 'numeric'}
+      placeholder={placeholder}
+      value={value}
+      disabled={disabled}
+      step={kind === 'weight' ? 2.5 : 1}
+      min={kind === 'weight' ? 0 : 1}
+      max={kind === 'weight' ? 200 : 30}
+      onChange={e => onChange(e.target.value)}
+      className={INPUT_CLS}
+    />
+  );
+}
 
 function TopBar({ left, title, right }) {
   return (
@@ -328,26 +388,22 @@ function ActiveExerciseView({ exercise, sessionId, userId, prMap, lastSessionDat
           <div key={idx} className={`flex items-center gap-2 mb-2.5 ${set.saved ? 'opacity-60' : ''}`}>
             <div className="font-mono text-[11px] text-text-muted w-5 text-center">{idx + 1}</div>
 
-            <input
-              type="number"
-              inputMode="decimal"
-              placeholder="kg"
+            <SetInput
+              kind="weight"
               value={set.weight}
               disabled={set.saved}
-              onChange={e => updateSet(idx, 'weight', e.target.value)}
-              className="flex-1 bg-bg-surface1 border border-subtle rounded-xl px-3 py-2.5 font-mono text-[14px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none disabled:opacity-50 text-center transition-colors"
+              placeholder="kg"
+              onChange={val => updateSet(idx, 'weight', val)}
             />
 
-            <span className="font-mono text-[11px] text-text-tertiary">×</span>
+            <span className="font-mono text-[11px] text-text-tertiary shrink-0">×</span>
 
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder="reps"
+            <SetInput
+              kind="reps"
               value={set.reps}
               disabled={set.saved}
-              onChange={e => updateSet(idx, 'reps', e.target.value)}
-              className="flex-1 bg-bg-surface1 border border-subtle rounded-xl px-3 py-2.5 font-mono text-[14px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none disabled:opacity-50 text-center transition-colors"
+              placeholder="reps"
+              onChange={val => updateSet(idx, 'reps', val)}
             />
 
             {set.saved ? (
