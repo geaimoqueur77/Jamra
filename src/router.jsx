@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate, Outlet, useLocation, Suspense, lazy } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { isOnboarded } from './db/database';
 import { useAuth } from './hooks/useAuth';
