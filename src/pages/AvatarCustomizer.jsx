@@ -73,7 +73,7 @@ export default function AvatarCustomizer() {
 
       {/* Preview */}
       <div className="flex justify-center py-6 px-6">
-        <div className="rounded-2xl overflow-hidden border border-subtle" style={{ background: '#070405' }}>
+        <div className="rounded-2xl border border-subtle" style={{ background: '#070405', overflow: 'visible' }}>
           <AvatarPreview bodyState={bodyState || 2} customization={customization} size={180} />
         </div>
       </div>

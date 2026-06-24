@@ -41,11 +41,12 @@ export default function AvatarPreview({ bodyState = 2, customization = {}, size 
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.beginPath(); ctx.ellipse(canvas.width / 2, canvas.height * 0.97, canvas.width * 0.22, canvas.height * 0.04, 0, 0, Math.PI * 2); ctx.fill();
 
-      // Personnage centré
+      // Personnage centré — ph = 90% canvas.height pour laisser 5% haut + 5% bas (ombre)
       const bounce = Math.sin(now / 600) * 1.5;
-      const pw = Math.round(canvas.width * 0.8), ph = Math.round(pw * 2);
+      const ph = Math.round(canvas.height * 0.90);
+      const pw = Math.round(ph / 2); // ratio 1:2 sprite
       const px = Math.round((canvas.width - pw) / 2);
-      const py = Math.round(canvas.height - ph - canvas.height * 0.06 + bounce);
+      const py = Math.round(canvas.height - ph - canvas.height * 0.05 + bounce);
       ctx.drawImage(off, 0, 0, 32, 64, px, py, pw, ph);
 
       rafRef.current = requestAnimationFrame(loop);
@@ -59,7 +60,7 @@ export default function AvatarPreview({ bodyState = 2, customization = {}, size 
     <canvas
       ref={canvasRef}
       width={size}
-      height={Math.round(size * 1.4)}
+      height={size * 2}
       style={{ display: 'block', imageRendering: 'pixelated', borderRadius: 12 }}
     />
   );
