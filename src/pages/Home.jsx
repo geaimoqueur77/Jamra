@@ -367,12 +367,12 @@ function PhaseBanner({ profile, weights }) {
       style={{ border: `1px solid ${color}30`, background: `${color}08` }}
     >
       <div className="px-4 pt-3 pb-3">
-        <div className="flex items-baseline justify-between mb-2.5">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display font-bold text-[15px]" style={{ color }}>{config.label}</span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary">· {config.sublabel}</span>
+        <div className="flex items-baseline justify-between mb-2.5 gap-2">
+          <div className="flex items-baseline gap-1.5 min-w-0 overflow-hidden">
+            <span className="font-display font-bold text-[15px] shrink-0" style={{ color }}>{config.label}</span>
+            <span className="font-mono text-[9px] uppercase tracking-tight text-text-tertiary truncate">· {config.sublabel}</span>
           </div>
-          <span className="font-mono text-[10px] font-bold" style={{ color }}>
+          <span className="font-mono text-[10px] font-bold shrink-0" style={{ color }}>
             {daysLeft > 0 ? `J-${daysLeft}` : '✓'}
           </span>
         </div>
@@ -788,24 +788,24 @@ export default function Home() {
             {over > 0 ? 'Dépassé' : 'Consommées'}
           </div>
         </ProgressRing>
-        <div className="flex gap-5 mt-5">
-          <div className="flex flex-col items-center gap-0.5">
+        <div className="flex gap-2 mt-5 w-full max-w-[280px]">
+          <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
             <div className={`font-display font-bold text-lg ${over > 0 ? 'text-danger' : 'text-heat-orange'}`}>
               {over > 0 ? `+${formatNumber(over)}` : formatNumber(remaining)}
             </div>
-            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
-              {over > 0 ? 'Dépassement' : 'Restant'}
+            <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">
+              {over > 0 ? 'Surplus' : 'Restant'}
             </div>
           </div>
-          <div className="w-px bg-subtle" />
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="w-px bg-subtle self-stretch" />
+          <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
             <div className="font-display font-bold text-lg">{formatNumber(metrics.tdee)}</div>
-            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">Dépense</div>
+            <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">Dépense</div>
           </div>
-          <div className="w-px bg-subtle" />
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="w-px bg-subtle self-stretch" />
+          <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
             <div className="font-display font-bold text-lg">−{formatNumber(metrics.deficit_kcal)}</div>
-            <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">Déficit</div>
+            <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">Déficit</div>
           </div>
         </div>
       </div>

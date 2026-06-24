@@ -3,10 +3,11 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getAllWeights, getLatestWeight, addOrUpdateWeight, getProfile, todayISO } from '../db/database';
 import { supabase } from '../lib/supabase';
 import Header from '../components/layout/Header';
-import { projectWeightTrend } from '../utils/calculations';
+import { projectWeightTrend, computePhase } from '../utils/calculations';
 import WeightLineChart from '../components/charts/WeightLineChart';
 import { useAchievements } from '../hooks/useAchievements';
 import { AchievementToastLayer } from '../components/AchievementToast';
+import BodyTransformSVG from '../components/BodyTransformSVG';
 
 function StatBox({ label, value, unit, highlight }) {
   return (
@@ -111,6 +112,7 @@ export default function Corps() {
   }, []);
 
   const trend = weights.length >= 2 ? projectWeightTrend(weights, profile?.poids_cible_kg) : null;
+  const currentPhase = computePhase(latestWeight?.poids_kg);
 
   const latestMeasure = measurements[0];
 
@@ -181,6 +183,16 @@ export default function Corps() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Transformation corporelle */}
+      <div className="px-6 pb-5">
+        <BodyTransformSVG
+          currentPhase={currentPhase}
+          poidsDepart={profile?.poids_initial_kg}
+          poidsCible={profile?.poids_cible_kg}
+          poidsActuel={latestWeight?.poids_kg}
+        />
       </div>
 
       {/* Graphique poids */}

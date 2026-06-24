@@ -506,13 +506,25 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
   const stateLabels = ['Départ', 'Phase 1', 'Phase 2', 'Objectif'];
   const bfValues = ['~30', '~18', '~14', '~12'];
 
+  // Idle CSS animation : respiration lente sur le container, micro-bounce sur le canvas
+  const idleStyle = {
+    animation: 'jmrBreath 4s ease-in-out infinite',
+  };
+  const canvasStyle = {
+    display: 'block',
+    width: '100%',
+    height: 'auto',
+    imageRendering: 'pixelated',
+    animation: 'jmrBounce 2.4s ease-in-out infinite',
+  };
+
   return (
-    <div className="relative rounded-[18px] overflow-hidden border border-subtle" style={{ background: '#070405' }}>
+    <div className="relative rounded-[18px] overflow-hidden border border-subtle" style={{ background: '#070405', ...idleStyle }}>
       <canvas
         ref={heroRef}
         width={640}
         height={360}
-        style={{ display: 'block', width: '100%', height: 'auto', imageRendering: 'pixelated' }}
+        style={canvasStyle}
       />
       {/* Scene label */}
       <div className="absolute top-2.5 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{ background: 'rgba(7,4,5,.55)', backdropFilter: 'blur(2px)' }}>

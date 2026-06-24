@@ -24,12 +24,12 @@ function Stat({ label, value, unit, tone = 'default' }) {
     tone === 'heat' ? 'text-heat-gradient' :
     'text-text-primary';
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className={`font-display font-bold text-xl ${toneClass}`}>
+    <div className="flex flex-col items-center gap-1 min-w-0">
+      <div className={`font-display font-bold text-[15px] leading-none ${toneClass} whitespace-nowrap`}>
         {value}
-        {unit && <span className="font-mono text-sm text-text-tertiary ml-1">{unit}</span>}
+        {unit && <span className="font-mono text-[10px] text-text-tertiary ml-0.5">{unit}</span>}
       </div>
-      <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
+      <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary">
         {label}
       </div>
     </div>
@@ -252,7 +252,7 @@ export default function Weight() {
 
       {/* Stats */}
       <div className="px-6 pb-5">
-        <div className="grid grid-cols-4 gap-3 p-5 bg-bg-surface1 border border-subtle rounded-2xl">
+        <div className="grid grid-cols-4 gap-2 p-4 bg-bg-surface1 border border-subtle rounded-2xl">
           <Stat
             label="Actuel"
             value={currentWeight != null ? formatNumber(currentWeight, { decimals: 1 }) : '—'}

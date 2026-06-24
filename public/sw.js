@@ -8,7 +8,7 @@
  *  - Network-only : appels API OpenFoodFacts (pas de cache côté SW, cache métier en IndexedDB)
  */
 
-const CACHE_VERSION = 'jamra-v1';
+const CACHE_VERSION = 'jamra-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
@@ -49,8 +49,9 @@ self.addEventListener('fetch', (event) => {
   // Ne traite que les GET same-origin et OFF
   if (request.method !== 'GET') return;
 
-  // Pas de cache pour OpenFoodFacts (toujours frais, IndexedDB gère déjà le cache métier)
+  // Pas de cache pour OpenFoodFacts ou Supabase API (toujours frais, IndexedDB gère le cache métier)
   if (url.hostname.includes('openfoodfacts')) return;
+  if (url.hostname.includes('supabase.co')) return;
 
   // Hors du scope de l'app : ne rien faire
   if (url.origin !== self.location.origin) return;

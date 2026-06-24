@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Jamra",
   "short_name": "Jamra",
   "description": "Suivi nutritionnel et sportif dédié à la braise — prends soin de toi avec précision et douceur.",
@@ -11,6 +12,7 @@
   "lang": "fr-FR",
   "dir": "ltr",
   "categories": ["health", "lifestyle", "fitness"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",
