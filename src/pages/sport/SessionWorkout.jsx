@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
-import { seedExercisesIfEmpty } from '../../lib/exerciseSeeder';
+import { seedExercisesIfEmpty, ensureBonusExercises } from '../../lib/exerciseSeeder';
 import { buildCoachContext } from '../../utils/coachContext';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -35,6 +35,30 @@ const PPL_PLAN = {
 
 const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
 const REST_DURATION = 90; // secondes
+
+// Exercices bonus optionnels (section séparée, toujours accessibles)
+const PPL_BONUS = {
+  push: [
+    { fr: 'Écartés haltères',   en: 'dumbbell fly',      muscle: 'Pectoraux',             secondary: 'Amplitude maximale' },
+    { fr: 'Arnold press',       en: 'arnold press',       muscle: 'Épaules complètes',     secondary: '' },
+    { fr: 'Skull crushers',     en: 'skull crusher',      muscle: 'Triceps long',          secondary: '' },
+    { fr: 'Cable crossover',    en: 'cable crossover',    muscle: 'Pectoraux',             secondary: 'Finition' },
+  ],
+  pull: [
+    { fr: 'Tractions',          en: 'pull up',            muscle: 'Grand dorsal',          secondary: 'Biceps' },
+    { fr: 'Rowing T-bar',       en: 't-bar row',          muscle: 'Épaisseur dos',         secondary: '' },
+    { fr: 'Curl marteau',       en: 'hammer curl',        muscle: 'Brachial',              secondary: 'Avant-bras' },
+    { fr: 'Reverse fly',        en: 'reverse fly dumbbell', muscle: 'Deltoïdes postérieurs', secondary: '' },
+    { fr: 'Curl pupitre',       en: 'preacher curl',      muscle: 'Biceps',                secondary: 'Isolation' },
+  ],
+  legs: [
+    { fr: 'Romanian deadlift',  en: 'romanian deadlift',  muscle: 'Ischio-jambiers',       secondary: 'Fessiers' },
+    { fr: 'Hack squat',         en: 'hack squat',         muscle: 'Quadriceps',            secondary: '' },
+    { fr: 'Leg extension',      en: 'leg extension',      muscle: 'Quadriceps',            secondary: 'Isolation' },
+    { fr: 'Glute kickback câble', en: 'cable glute kickback', muscle: 'Fessiers',          secondary: 'Isolation' },
+    { fr: 'Step-ups',           en: 'dumbbell step up',   muscle: 'Jambes',                secondary: 'Fonctionnel' },
+  ],
+};
 
 // Paliers poids : 0, 2.5, 5 … 200 kg (81 valeurs)
 const WEIGHT_OPTIONS = Array.from({ length: 81 }, (_, i) => +(i * 2.5).toFixed(1));
@@ -211,8 +235,59 @@ function TypeSelectView({ onSelect }) {
 
 // ─── Vue : liste des exercices ────────────────────────────────────────────────
 
+function ExerciseRow({ ex, sessionSets, completedExercises, lastSessionData, exerciseMeta, onSelectExercise, bonus = false }) {
+  const sets = sessionSets[ex.fr] || [];
+  const done = completedExercises.has(ex.fr);
+  const meta = exerciseMeta[ex.fr];
+  const setCount = sets.length;
+
+  return (
+    <button
+      onClick={() => onSelectExercise(ex)}
+      className={`w-full flex items-center gap-4 px-6 py-4 border-b border-subtle text-left hover:bg-bg-surface1 transition-colors ${done ? 'opacity-60' : ''}`}
+    >
+      <div className="w-12 h-12 rounded-xl overflow-hidden bg-bg-surface2 flex items-center justify-center shrink-0">
+        {meta?.gif_cached_url || meta?.gif_url ? (
+          <img src={meta.gif_cached_url || meta.gif_url} alt={ex.fr} className="w-full h-full object-cover" loading="lazy" />
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" />
+          </svg>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <span className="font-body font-semibold text-[14px] text-text-primary truncate">{ex.fr}</span>
+          {bonus && !done && setCount === 0 && (
+            <span className="shrink-0 font-mono text-[8px] uppercase tracking-wider text-heat-orange border border-heat-orange/30 rounded px-1 py-px">bonus</span>
+          )}
+        </div>
+        <div className="font-mono text-[10px] text-text-tertiary mt-0.5">
+          {ex.muscle}{ex.secondary ? ` · ${ex.secondary}` : ''}
+        </div>
+      </div>
+
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        {done && <span className="font-mono text-[10px] text-success">{setCount} séries ✓</span>}
+        {!done && setCount > 0 && <span className="font-mono text-[10px] text-heat-amber">{setCount} série{setCount > 1 ? 's' : ''}</span>}
+        {lastSessionData[ex.fr]?.length > 0 && (
+          <span className="font-mono text-[9px] text-text-muted">Dernier : {lastSessionData[ex.fr][0].weight_kg}kg</span>
+        )}
+      </div>
+    </button>
+  );
+}
+
 function ExerciseListView({ type, sessionSets, exerciseMeta, completedExercises, lastSessionData, onSelectExercise, onFinish }) {
   const exercises = PPL_PLAN[type];
+  const bonusExercises = PPL_BONUS[type] || [];
+  const [showBonus, setShowBonus] = useState(false);
+
+  // Ouvre la section bonus automatiquement si un bonus a déjà des séries
+  const hasBonusActivity = bonusExercises.some(ex => (sessionSets[ex.fr] || []).length > 0 || completedExercises.has(ex.fr));
+
+  const rowProps = { sessionSets, completedExercises, lastSessionData, exerciseMeta, onSelectExercise };
 
   return (
     <div className="flex-1 overflow-y-auto pb-28">
@@ -222,57 +297,33 @@ function ExerciseListView({ type, sessionSets, exerciseMeta, completedExercises,
         </div>
       </div>
 
-      {exercises.map((ex) => {
-        const sets = sessionSets[ex.fr] || [];
-        const done = completedExercises.has(ex.fr);
-        const meta = exerciseMeta[ex.fr];
-        const setCount = sets.length;
+      {exercises.map(ex => <ExerciseRow key={ex.fr} ex={ex} {...rowProps} />)}
 
-        return (
-          <button
-            key={ex.fr}
-            onClick={() => onSelectExercise(ex)}
-            className={`w-full flex items-center gap-4 px-6 py-4 border-b border-subtle text-left hover:bg-bg-surface1 transition-colors ${done ? 'opacity-60' : ''}`}
-          >
-            {/* Mini GIF ou placeholder */}
-            <div className="w-12 h-12 rounded-xl overflow-hidden bg-bg-surface2 flex items-center justify-center shrink-0">
-              {meta?.gif_cached_url || meta?.gif_url ? (
-                <img src={meta.gif_cached_url || meta.gif_url} alt={ex.fr} className="w-full h-full object-cover" loading="lazy" />
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v4l3 3" />
-                </svg>
-              )}
-            </div>
+      {/* Section exercices bonus */}
+      <button
+        onClick={() => setShowBonus(v => !v)}
+        className="w-full flex items-center justify-between px-6 py-3.5 border-b border-t border-subtle bg-bg-surface1 hover:bg-bg-surface2 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary">
+            Exercices bonus
+          </span>
+          {hasBonusActivity && (
+            <span className="w-1.5 h-1.5 rounded-full bg-heat-orange" />
+          )}
+          <span className="font-mono text-[10px] text-text-muted">{bonusExercises.length}</span>
+        </div>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className={`text-text-tertiary transition-transform duration-200 ${(showBonus || hasBonusActivity) ? 'rotate-180' : ''}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
 
-            <div className="flex-1 min-w-0">
-              <div className="font-body font-semibold text-[14px] text-text-primary truncate">{ex.fr}</div>
-              <div className="font-mono text-[10px] text-text-tertiary mt-0.5">
-                {ex.muscle}{ex.secondary ? ` · ${ex.secondary}` : ''}
-              </div>
-            </div>
-
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              {done && (
-                <span className="font-mono text-[10px] text-success">
-                  {setCount} séries ✓
-                </span>
-              )}
-              {!done && setCount > 0 && (
-                <span className="font-mono text-[10px] text-heat-amber">
-                  {setCount} série{setCount > 1 ? 's' : ''}
-                </span>
-              )}
-              {lastSessionData[ex.fr]?.length > 0 && (
-                <span className="font-mono text-[9px] text-text-muted">
-                  Dernier : {lastSessionData[ex.fr][0].weight_kg}kg
-                </span>
-              )}
-            </div>
-          </button>
-        );
-      })}
+      {(showBonus || hasBonusActivity) && bonusExercises.map(ex => (
+        <ExerciseRow key={ex.fr} ex={ex} {...rowProps} bonus />
+      ))}
 
       {/* Bouton fin de séance */}
       <div className="fixed bottom-8 left-0 right-0 px-6">
@@ -698,6 +749,7 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
       if (user?.id) setUserId(user.id);
     });
     seedExercisesIfEmpty();
+    ensureBonusExercises(); // upsert bonus même si seed initial déjà fait
   }, []);
 
   // Démarrage automatique si initialType fourni (attend que userId soit prêt)
@@ -734,8 +786,11 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
     setSessionStart(Date.now());
     setSessionType(type);
 
-    // Charge PRs historiques
-    const exerciseNames = PPL_PLAN[type].map(e => e.fr);
+    // Charge PRs historiques (plan principal + bonus)
+    const exerciseNames = [
+      ...PPL_PLAN[type].map(e => e.fr),
+      ...(PPL_BONUS[type] || []).map(e => e.fr),
+    ];
     const { data: history } = await supabase
       .from('workout_sets')
       .select('exercise_name, weight_kg')

@@ -23,6 +23,45 @@ export const EXERCISE_MAP = {
   'Abducteurs':                 'hip abduction',
 };
 
+// Exercices bonus — mappés séparément pour pouvoir upsert indépendamment
+export const BONUS_EXERCISE_MAP = {
+  // Push
+  'Écartés haltères':           'dumbbell fly',
+  'Arnold press':               'arnold press',
+  'Skull crushers':             'skull crusher',
+  'Cable crossover':            'cable crossover',
+  // Pull
+  'Tractions':                  'pull up',
+  'Rowing T-bar':               't-bar row',
+  'Curl marteau':               'hammer curl',
+  'Reverse fly':                'reverse fly dumbbell',
+  'Curl pupitre':               'preacher curl',
+  // Legs
+  'Romanian deadlift':          'romanian deadlift',
+  'Hack squat':                 'hack squat',
+  'Leg extension':              'leg extension',
+  'Glute kickback câble':       'cable glute kickback',
+  'Step-ups':                   'dumbbell step up',
+};
+
+// Fallback statique pour les exercices bonus
+const BONUS_FALLBACK = {
+  'Écartés haltères':       { muscle_target: 'Pectoraux', muscles_secondary: ['Épaules avant'], equipment: 'Haltères', instructions: ['Allongé sur un banc plat, haltères bras tendus au-dessus de la poitrine.', 'Ouvre les bras en arc de cercle jusqu\'à sentir l\'étirement des pecs.', 'Remonte en gardant les coudes légèrement fléchis.'] },
+  'Arnold press':           { muscle_target: 'Épaules', muscles_secondary: ['Triceps', 'Trapèzes'], equipment: 'Haltères', instructions: ['Assis, haltères devant toi, paumes vers toi, coudes à 90°.', 'Pousse vers le haut en faisant pivoter les poignets (paumes vers l\'avant au sommet).', 'Inverse le mouvement à la descente.'] },
+  'Skull crushers':         { muscle_target: 'Triceps long', muscles_secondary: ['Triceps latéral'], equipment: 'Barre EZ / Haltères', instructions: ['Allongé sur un banc, barre au-dessus du visage, bras tendus.', 'Fléchis seulement les coudes pour descendre la barre vers le front.', 'Remonte en étendant les coudes sans bouger les épaules.'] },
+  'Cable crossover':        { muscle_target: 'Pectoraux', muscles_secondary: ['Épaules avant'], equipment: 'Câbles', instructions: ['Poulies hautes, une dans chaque main.', 'Tire les câbles vers le bas et l\'intérieur en arc de cercle.', 'Contracte les pecs au centre, puis reviens lentement.'] },
+  'Tractions':              { muscle_target: 'Grand dorsal', muscles_secondary: ['Biceps', 'Épaules arrière'], equipment: 'Barre fixe', instructions: ['Prise pronation, largeur d\'épaules ou plus large.', 'Tire le corps vers le haut jusqu\'à ce que le menton dépasse la barre.', 'Descends lentement jusqu\'à extension complète.'] },
+  'Rowing T-bar':           { muscle_target: 'Dos moyen', muscles_secondary: ['Biceps', 'Trapèzes'], equipment: 'T-bar / Barre', instructions: ['Penché à ~45°, mains sur les poignées de la T-bar.', 'Tire vers la poitrine, coudes vers l\'arrière.', 'Contracte fort les omoplates au sommet. Redescends.'] },
+  'Curl marteau':           { muscle_target: 'Brachial', muscles_secondary: ['Biceps', 'Avant-bras'], equipment: 'Haltères', instructions: ['Debout, haltères en prise neutre (pouces vers le haut).', 'Fléchis les coudes sans tourner les poignets.', 'Monte jusqu\'aux épaules, descends lentement.'] },
+  'Reverse fly':            { muscle_target: 'Deltoïdes postérieurs', muscles_secondary: ['Rhomboïdes', 'Trapèzes'], equipment: 'Haltères', instructions: ['Penché à ~45°, haltères devant toi, coudes légèrement fléchis.', 'Ouvre les bras latéralement en arc de cercle.', 'Monte jusqu\'à hauteur d\'épaule. Redescends lentement.'] },
+  'Curl pupitre':           { muscle_target: 'Biceps', muscles_secondary: ['Avant-bras'], equipment: 'Pupitre / Barre EZ', instructions: ['Bras appuyés sur le pupitre, poignets au bord.', 'Fléchis les coudes pour monter la barre jusqu\'à l\'épaule.', 'Descends lentement jusqu\'à extension complète.'] },
+  'Romanian deadlift':      { muscle_target: 'Ischio-jambiers', muscles_secondary: ['Fessiers', 'Bas du dos'], equipment: 'Barre / Haltères', instructions: ['Debout, barre devant les cuisses, dos droit.', 'Penche-toi en avant en poussant les hanches vers l\'arrière, barre contre les jambes.', 'Descends jusqu\'à sentir l\'étirement des ischio. Remonte en contractant.'] },
+  'Hack squat':             { muscle_target: 'Quadriceps', muscles_secondary: ['Fessiers', 'Mollets'], equipment: 'Machine hack squat', instructions: ['Dos contre le dossier, épaules sous les appuis.', 'Pieds à largeur d\'épaules sur la plateforme.', 'Descends jusqu\'à 90°. Pousse sans verrouiller les genoux.'] },
+  'Leg extension':          { muscle_target: 'Quadriceps', muscles_secondary: [], equipment: 'Machine', instructions: ['Assis, cheville sous le rouleau.', 'Étends les genoux jusqu\'à l\'horizontale.', 'Tiens 1s au sommet. Redescends lentement.'] },
+  'Glute kickback câble':   { muscle_target: 'Fessiers', muscles_secondary: ['Ischio-jambiers'], equipment: 'Câble + cheville', instructions: ['Face à la poulie, bracelet à la cheville.', 'Maintiens le dos droit et pousse la jambe vers l\'arrière et le haut.', 'Contracte les fessiers au sommet. Reviens sous contrôle.'] },
+  'Step-ups':               { muscle_target: 'Quadriceps', muscles_secondary: ['Fessiers', 'Ischio-jambiers'], equipment: 'Haltères + banc', instructions: ['Haltères dans les mains, pied dominant sur le banc.', 'Pousse sur ce pied pour monter et amener l\'autre genou à la hanche.', 'Redescends lentement. Alterne les jambes.'] },
+};
+
 // Données statiques de fallback (muscles + instructions de base)
 const FALLBACK = {
   'Développé couché haltères': { muscle_target: 'Pectoraux', muscles_secondary: ['Triceps', 'Épaules'], equipment: 'Haltères', instructions: ['Allonge-toi sur un banc plat, un haltère dans chaque main.', 'Positionne les haltères à la hauteur de ta poitrine, coudes à ~75°.', 'Pousse les haltères vers le haut jusqu\'à extension complète.', 'Redescends lentement sous contrôle jusqu\'à la position initiale.'] },
@@ -74,6 +113,66 @@ async function seedFromFallback() {
     ...data,
   }));
   await supabase.from('exercises').upsert(rows, { onConflict: 'name_fr' });
+}
+
+/**
+ * Upsert les exercices bonus (toujours appelé, indépendant du seed initial).
+ * Si VITE_RAPIDAPI_KEY est disponible, enrichit avec les GIFs ExerciseDB.
+ */
+export async function ensureBonusExercises() {
+  const rows = Object.entries(BONUS_FALLBACK).map(([name_fr, data]) => ({
+    name_fr,
+    name_en: BONUS_EXERCISE_MAP[name_fr],
+    ...data,
+  }));
+  await supabase.from('exercises').upsert(rows, { onConflict: 'name_fr' });
+
+  const apiKey = import.meta.env.VITE_RAPIDAPI_KEY;
+  if (!apiKey) return;
+
+  const headers = {
+    'X-RapidAPI-Key': apiKey,
+    'X-RapidAPI-Host': 'exercisedb.p.rapidapi.com',
+  };
+
+  for (const [name_fr, name_en] of Object.entries(BONUS_EXERCISE_MAP)) {
+    try {
+      const res = await fetch(
+        `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(name_en)}?limit=1`,
+        { headers }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      const ex = data?.[0];
+      if (!ex) continue;
+
+      const gifUrl = ex.gifUrl;
+      let gifCachedUrl = null;
+      try {
+        const gifRes = await fetch(gifUrl);
+        if (gifRes.ok) {
+          const blob = await gifRes.blob();
+          const fileName = `${name_fr.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.gif`;
+          const { data: uploaded } = await supabase.storage
+            .from('exercise-demos')
+            .upload(fileName, blob, { contentType: 'image/gif', upsert: true });
+          if (uploaded) {
+            const { data: { publicUrl } } = supabase.storage.from('exercise-demos').getPublicUrl(fileName);
+            gifCachedUrl = publicUrl;
+          }
+        }
+      } catch {}
+
+      await supabase.from('exercises').update({
+        gif_url: gifUrl,
+        gif_cached_url: gifCachedUrl,
+        muscle_target: ex.target,
+        muscles_secondary: ex.secondaryMuscles,
+        equipment: ex.equipment,
+        instructions: ex.instructions,
+      }).eq('name_fr', name_fr);
+    } catch {}
+  }
 }
 
 async function seedFromExerciseDB(apiKey) {
