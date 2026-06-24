@@ -8,6 +8,59 @@ import ExerciseProgressModal from './sport/ExerciseProgressModal';
 import ExpressWorkout, { syncOfflineSessions, getOfflineSessions } from './sport/ExpressWorkout';
 
 const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
+
+function RivalSection({ sessions }) {
+  // Rival = tes séances de la semaine dernière + 10%
+  const now = new Date();
+  const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay() + 1); startOfWeek.setHours(0,0,0,0);
+  const startOfLastWeek = new Date(startOfWeek); startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+
+  const thisWeek = (sessions || []).filter(s => new Date(s.date) >= startOfWeek).length;
+  const lastWeek = (sessions || []).filter(s => {
+    const d = new Date(s.date);
+    return d >= startOfLastWeek && d < startOfWeek;
+  }).length;
+  const rivalCount = Math.ceil(lastWeek * 1.1) || 1;
+  const ratio = Math.min(1, thisWeek / rivalCount);
+  const ahead = thisWeek > rivalCount;
+
+  return (
+    <div className="px-6 pb-4">
+      <div className="rounded-2xl border border-subtle bg-bg-surface1 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary">
+            Contre ton Rival
+          </div>
+          <span className={`font-mono text-[10px] font-bold ${ahead ? 'text-success' : 'text-danger'}`}>
+            {ahead ? '↑ Devant' : '↓ Derrière'}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 mb-2.5">
+          {/* Toi */}
+          <div className="flex flex-col items-center gap-0.5 w-10">
+            <div className="font-display font-bold text-lg text-heat-orange">{thisWeek}</div>
+            <div className="font-mono text-[8px] uppercase tracking-tight text-text-tertiary">Toi</div>
+          </div>
+          {/* Barre */}
+          <div className="flex-1 h-2 rounded-full bg-bg-surface2 overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${Math.round(ratio * 100)}%`, background: ahead ? '#10b981' : '#FF4D00' }}
+            />
+          </div>
+          {/* Rival */}
+          <div className="flex flex-col items-center gap-0.5 w-10">
+            <div className="font-display font-bold text-lg text-text-secondary">{rivalCount}</div>
+            <div className="font-mono text-[8px] uppercase tracking-tight text-text-tertiary">Rival</div>
+          </div>
+        </div>
+        <div className="font-mono text-[9px] text-text-tertiary text-center">
+          {lastWeek === 0 ? 'Log ta première séance pour créer un rival' : `Objectif : battre ta semaine dernière +10%`}
+        </div>
+      </div>
+    </div>
+  );
+}
 const TYPE_COLORS = {
   push: 'text-heat-orange',
   pull: 'text-heat-amber',
@@ -178,6 +231,9 @@ export default function Sport() {
             </div>
           </div>
         </div>
+
+        {/* Section Rival — km semaine vs rival */}
+        <RivalSection sessions={sessions} />
 
         {/* Liste des séances */}
         <div className="px-6 pb-32">

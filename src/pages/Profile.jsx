@@ -193,6 +193,47 @@ function AchievementsSection({ userId }) {
   );
 }
 
+function usePushNotifications(userId) {
+  const [enabled, setEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('push_enabled');
+    if (saved === 'true') setEnabled(true);
+  }, []);
+
+  const toggle = async () => {
+    if (loading || !userId) return;
+    setLoading(true);
+    try {
+      if (!enabled) {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { setLoading(false); return; }
+        const reg = await navigator.serviceWorker.ready;
+        const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: vapidKey,
+        });
+        await supabase.from('push_subscriptions').upsert({ user_id: userId, subscription: sub.toJSON() }, { onConflict: 'user_id' });
+        localStorage.setItem('push_enabled', 'true');
+        setEnabled(true);
+      } else {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) await sub.unsubscribe();
+        await supabase.from('push_subscriptions').delete().eq('user_id', userId);
+        localStorage.setItem('push_enabled', 'false');
+        setEnabled(false);
+      }
+    } catch { /* permission refusée ou non supporté */ }
+    setLoading(false);
+  };
+
+  const supported = typeof window !== 'undefined' && 'PushManager' in window && 'serviceWorker' in navigator;
+  return { enabled, loading, toggle, supported };
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const profile = useLiveQuery(getProfile);
@@ -200,6 +241,7 @@ export default function Profile() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
   const { checkMarathonSigned, recentUnlocks } = useAchievements();
+  const push = usePushNotifications(user?.id);
 
   if (!profile) return null;
 
@@ -280,6 +322,47 @@ export default function Profile() {
             {profile.prenom} 👋
           </div>
         </div>
+
+        {/* Personnalisation avatar */}
+        <button
+          onClick={() => navigate('/personnalisation')}
+          className="w-full flex items-center justify-between py-3.5 px-4 rounded-2xl border border-subtle bg-bg-surface1 hover:border-heat-orange/40 transition-colors group"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-heat-orange/10 flex items-center justify-center text-heat-orange text-sm">
+              🎨
+            </div>
+            <div className="text-left">
+              <div className="font-display font-bold text-[13px] text-text-primary">Personnaliser mon avatar</div>
+              <div className="font-mono text-[9px] text-text-tertiary uppercase tracking-wider">Tenue · Cheveux · Lunettes</div>
+            </div>
+          </div>
+          <div className="font-mono text-text-muted text-[11px] group-hover:text-heat-orange transition-colors">→</div>
+        </button>
+
+        {/* Notifications push */}
+        {push.supported && (
+          <button
+            onClick={push.toggle}
+            disabled={push.loading}
+            className="w-full flex items-center justify-between py-3.5 px-4 rounded-2xl border border-subtle bg-bg-surface1 hover:border-heat-orange/40 transition-colors disabled:opacity-50"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-heat-orange/10 flex items-center justify-center text-heat-orange text-sm">
+                🔔
+              </div>
+              <div className="text-left">
+                <div className="font-display font-bold text-[13px] text-text-primary">Notifications</div>
+                <div className="font-mono text-[9px] text-text-tertiary uppercase tracking-wider">
+                  {push.enabled ? 'Activées — rappel 18h + bilan dimanche' : 'Rappels séances · Bilan hebdo'}
+                </div>
+              </div>
+            </div>
+            <div className={`w-10 h-5 rounded-full transition-colors ${push.enabled ? 'bg-heat-orange' : 'bg-bg-surface2 border border-subtle'}`}>
+              <div className={`w-4 h-4 rounded-full bg-white mt-0.5 transition-all ${push.enabled ? 'ml-5.5' : 'ml-0.5'}`} style={{ marginLeft: push.enabled ? '22px' : '2px' }} />
+            </div>
+          </button>
+        )}
 
         {/* Profil */}
         <Card>

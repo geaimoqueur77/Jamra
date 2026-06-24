@@ -8,6 +8,7 @@ import StepPersonal from './StepPersonal';
 import StepCurrent from './StepCurrent';
 import StepFitness from './StepFitness';
 import StepGoal from './StepGoal';
+import StepAvatar from './StepAvatar';
 import StepRecap from './StepRecap';
 
 export default function OnboardingWizard() {
@@ -39,13 +40,14 @@ export default function OnboardingWizard() {
         phase_actuelle: phase,
         xp: 0,
         strava_connected: false,
+        avatar_customization: data.avatar_customization ?? { skin: 'medium', hair: 'short_dark', glasses: 'none', outfit: 'default', shoes: 'default' },
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
     }
     navigate('/', { replace: true });
   };
 
-  const totalSteps = 5;
+  const totalSteps = 6;
   const progress = step === 0 ? 0 : step / totalSteps;
 
   return (
@@ -64,7 +66,8 @@ export default function OnboardingWizard() {
       {step === 2 && <StepCurrent  data={data} onNext={handleNext} onBack={handleBack} />}
       {step === 3 && <StepFitness  data={data} onNext={handleNext} onBack={handleBack} />}
       {step === 4 && <StepGoal     data={data} onNext={handleNext} onBack={handleBack} />}
-      {step === 5 && <StepRecap    data={data} onFinish={handleFinish} onBack={handleBack} />}
+      {step === 5 && <StepAvatar   data={data} onNext={handleNext} onBack={handleBack} />}
+      {step === 6 && <StepRecap    data={data} onFinish={handleFinish} onBack={handleBack} />}
     </div>
   );
 }

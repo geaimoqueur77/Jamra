@@ -91,3 +91,32 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
+
+// ─── Push notifications ──────────────────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  let data = { title: 'Jamra', body: '💪 Nouveau message de ton coach', icon: '/icon-192.png', badge: '/icon-192.png', tag: 'jamra-push' };
+  if (event.data) {
+    try { Object.assign(data, event.data.json()); } catch { data.body = event.data.text(); }
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon || '/icon-192.png',
+      badge: data.badge || '/icon-192.png',
+      tag: data.tag || 'jamra-push',
+      data: { url: data.url || '/' },
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(wins => {
+      const match = wins.find(w => w.url.includes(self.location.origin));
+      if (match) { match.focus(); match.navigate(url); }
+      else clients.openWindow(url);
+    })
+  );
+});

@@ -21,7 +21,10 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { InsightsRow } from '../components/insights/InsightCard';
 import FatBurnWidget from '../components/FatBurnWidget';
 import JamraAvatar from '../components/JamraAvatar';
+import JamrMascot from '../components/avatar/JamrMascot';
 import { useAvatarState } from '../hooks/useAvatarState';
+import { useAvatarCustomization } from '../hooks/useAvatarCustomization';
+import { shareOrDownloadWeekly } from '../utils/shareWeekly';
 import { useAchievements } from '../hooks/useAchievements';
 import { AchievementToastLayer } from '../components/AchievementToast';
 import SessionWorkout from './sport/SessionWorkout';
@@ -461,9 +464,10 @@ function getISOWeekKey() {
 
 // ─── Bilan hebdomadaire (visible le dimanche ou si non lu cette semaine) ───────
 
-function WeeklyDigestCard({ userId }) {
+function WeeklyDigestCard({ userId, avatarState, avatarCustomization }) {
   const [dismissed, setDismissed] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [response, setResponse] = useState(null);
   const weekKey = getISOWeekKey();
 
@@ -534,7 +538,40 @@ function WeeklyDigestCard({ userId }) {
         </button>
       </div>
       {response ? (
-        <div className="font-body text-[13px] text-text-primary leading-relaxed mt-2">{response}</div>
+        <>
+          <div className="font-body text-[13px] text-text-primary leading-relaxed mt-2">{response}</div>
+          <button
+            onClick={async () => {
+              setSharing(true);
+              try {
+                const ctx = await buildCoachContext(userId);
+                const today = todayISO();
+                const weekStart = addDaysISO(today, -6);
+                const [sessionsRes, stravaRes] = await Promise.all([
+                  supabase.from('workout_sessions').select('type, date').eq('user_id', userId).gte('date', weekStart),
+                  supabase.from('strava_activities').select('distance_m, calories').eq('profile_id', userId).gte('start_date', weekStart),
+                ]);
+                const sessions = sessionsRes.data || [];
+                const activities = stravaRes.data || [];
+                const weekData = {
+                  poids: ctx.last_weight?.value,
+                  poidsPrec: null,
+                  graisseBrulee: activities.reduce((s, a) => s + (a.calories || 0), 0) * 0.15 / 1000,
+                  seances: sessions.length,
+                  kmZone2: Math.round(activities.reduce((s, a) => s + (a.distance_m || 0), 0) / 100) / 10,
+                  streak: ctx.streak,
+                  weekLabel: weekKey,
+                };
+                await shareOrDownloadWeekly(weekData, avatarState, avatarCustomization, response);
+              } catch { /* silent */ }
+              setSharing(false);
+            }}
+            disabled={sharing}
+            className="w-full mt-2 py-2 rounded-xl bg-bg-surface2 border border-subtle font-display font-bold text-[11px] uppercase tracking-wider text-text-secondary hover:bg-heat-orange/10 hover:text-heat-orange hover:border-heat-orange/30 transition-colors disabled:opacity-40"
+          >
+            {sharing ? 'Génération...' : '↗ Partager mon bilan'}
+          </button>
+        </>
       ) : (
         <>
           <div className="font-body text-[12px] text-text-tertiary mb-3">
@@ -614,7 +651,19 @@ function CoachChatWidget({ userId }) {
                     : 'bg-bg-surface1 border border-subtle text-text-secondary'
                 }`}
               >
-                {msg.role === 'coach' && <span className="text-heat-orange font-bold text-[10px] block mb-0.5">COACH</span>}
+                {msg.role === 'coach' && (
+                <span className="flex items-center gap-1 text-heat-orange font-bold text-[10px] mb-0.5">
+                  <svg width="10" height="10" viewBox="0 0 32 64" style={{ imageRendering: 'pixelated', flexShrink: 0 }}>
+                    <rect x="6" y="3" width="20" height="16" fill="#d3915d" rx="2" />
+                    <rect x="8" y="16" width="16" height="22" fill="#0a1422" />
+                    <rect x="5" y="26" width="8" height="2" fill="#d3915d" />
+                    <rect x="19" y="26" width="8" height="2" fill="#0a1422" />
+                    <rect x="9" y="38" width="5" height="16" fill="#0a1422" />
+                    <rect x="18" y="38" width="5" height="16" fill="#0a1422" />
+                  </svg>
+                  COACH
+                </span>
+              )}
                 {msg.text}
               </div>
             </div>
@@ -656,6 +705,7 @@ function CoachChatWidget({ userId }) {
 export default function Home() {
   const navigate = useNavigate();
   const avatarState = useAvatarState();
+  const { customization: avatarCustomization } = useAvatarCustomization();
   const today = todayISO();
   const todayDate = new Date();
   const sevenDaysAgo = addDaysISO(today, -6);
@@ -760,13 +810,20 @@ export default function Home() {
       {/* 1 ── AVATAR */}
       {!avatarState.loading && (
         <div className="px-6 pt-2 pb-1">
-          <JamraAvatar
-            bodyState={avatarState.bodyState}
-            expression={avatarProud ? 'fier' : avatarState.expression}
-            scene={avatarState.scene}
-            weight={avatarState.weight}
-            bf={avatarState.bf}
-          />
+          <div className="relative">
+            <JamraAvatar
+              bodyState={avatarState.bodyState}
+              expression={avatarProud ? 'fier' : avatarState.expression}
+              scene={avatarState.scene}
+              weight={avatarState.weight}
+              bf={avatarState.bf}
+              customization={avatarCustomization}
+            />
+            {/* Jamr mascot — coin bas gauche */}
+            <div className="absolute bottom-3 left-3" style={{ animation: 'jmrBounce 2s ease-in-out infinite' }}>
+              <JamrMascot state={avatarState.scene === 'absent' ? 'sad' : avatarProud ? 'happy' : 'idle'} size={32} />
+            </div>
+          </div>
         </div>
       )}
 
@@ -832,7 +889,7 @@ export default function Home() {
 
       {/* 8 ── BILAN HEBDO (dimanche seulement) */}
       <div className="pt-2 pb-1">
-        <WeeklyDigestCard userId={userId} />
+        <WeeklyDigestCard userId={userId} avatarState={avatarState} avatarCustomization={avatarCustomization} />
       </div>
 
       {/* ── MACROS */}

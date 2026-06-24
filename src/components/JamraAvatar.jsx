@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 
 // ─────────────────────────────────────────────
-//  Palette Heat Signature
+//  Palette Heat Signature (valeurs non-customisables)
 // ─────────────────────────────────────────────
 const PAL = {
   ol: '#1a0a00',
@@ -13,6 +13,53 @@ const PAL = {
   so: '#15111a', soa: '#FF4D00',
   gs: '#0c0c12', gsc: '#FFAA33',
   eye: '#120a0a', gl: '#5a4750', mo: '#7a3b22',
+};
+
+// ─────────────────────────────────────────────
+//  Palettes de personnalisation
+// ─────────────────────────────────────────────
+const SKIN_TONES = {
+  medium: { sk0: '#f0b485', sk1: '#d3915d', sk2: '#a46a3e', sk3: '#7c4a2c' },
+  light:  { sk0: '#fad4a8', sk1: '#f0b07a', sk2: '#d4885a', sk3: '#b06842' },
+  dark:   { sk0: '#c87840', sk1: '#9e5828', sk2: '#7a3c18', sk3: '#5c2c0e' },
+};
+
+const OUTFIT_PALS = {
+  default:     { jo0: '#2c2c38', jo1: '#1a1a22', jo2: '#101016', so: '#15111a', soa: '#FF4D00' },
+  gym:         { jo0: '#0a1828', jo1: '#060e18', jo2: '#030810', so: '#0c0a14', soa: '#FF4D00' },
+  running:     { jo0: '#1a2a44', jo1: '#101a2e', jo2: '#080f1c', so: '#0f1826', soa: '#FF6820' },
+  competition: { jo0: '#a01010', jo1: '#700808', jo2: '#480404', so: '#0c0a14', soa: '#FFD040' },
+  rest:        { jo0: '#2c1a2c', jo1: '#1e1020', jo2: '#120814', so: '#1a1014', soa: '#c87030' },
+};
+
+export const CUSTOMIZATION_OPTIONS = {
+  skin: [
+    { id: 'medium',      label: 'Mate',        default: true },
+    { id: 'light',       label: 'Claire',       unlockAt: 0 },
+    { id: 'dark',        label: 'Foncée',       unlockAt: 0 },
+  ],
+  hair: [
+    { id: 'short_dark',  label: 'Court foncé',  default: true },
+    { id: 'fade',        label: 'Dégradé',      unlockAt: 0 },
+    { id: 'curly',       label: 'Bouclé',       unlockAt: 500 },
+    { id: 'shaved',      label: 'Rasé',         unlockAt: 1000 },
+  ],
+  glasses: [
+    { id: 'none',        label: 'Aucune',       default: true },
+    { id: 'round',       label: 'Rondes',       unlockAt: 0 },
+    { id: 'sport',       label: 'Sport',        unlockAt: 300 },
+  ],
+  outfit: [
+    { id: 'default',     label: 'Jogger + tee', default: true },
+    { id: 'gym',         label: 'Tenue salle',  unlockAt: 20 },
+    { id: 'running',     label: 'Tenue run',    unlockAt: 5 },
+    { id: 'competition', label: 'Compétition',  unlockAt: 'marathon_signed' },
+    { id: 'rest',        label: 'Détente',      unlockAt: 'streak_7' },
+  ],
+  shoes: [
+    { id: 'default',     label: 'Baskets',      default: true },
+    { id: 'running',     label: 'Running',      unlockAt: 10 },
+  ],
 };
 
 // ─────────────────────────────────────────────
@@ -67,7 +114,7 @@ function limb(g, x0, y0, x1, y1, r, base, sh, hi) {
 }
 
 // ─────────────────────────────────────────────
-//  Body profile curve (silhouette width by Y)
+//  Body profile curve
 // ─────────────────────────────────────────────
 function makeProfile(state) {
   const t = (state - 1) / 3;
@@ -85,13 +132,13 @@ function makeProfile(state) {
 }
 
 // ─────────────────────────────────────────────
-//  Face features
+//  Face features — acceptent SK pour la peau
 // ─────────────────────────────────────────────
-function drawFaceFeatures(g, cx, hcy, expr) {
+function drawFaceFeatures(g, cx, hcy, expr, SK) {
   const ex = Math.round(cx);
   const eyeY = Math.round(hcy) + 1;
   const browY = eyeY - 2, my = eyeY + 2;
-  const B = PAL.ha0, M = PAL.mo, S = PAL.sk2, H = PAL.sk0;
+  const B = PAL.ha0, M = PAL.mo, S = SK.sk2, H = SK.sk0;
   P(g, ex, eyeY + 1, S);
   P(g, ex + 3, eyeY, S);
   if (expr === 'satisfait') {
@@ -115,20 +162,20 @@ function drawFaceFeatures(g, cx, hcy, expr) {
   }
 }
 
-function drawEyes(g, cx, hcy, expr) {
+function drawEyes(g, cx, hcy, expr, SK) {
   const ex = Math.round(cx), eyeY = Math.round(hcy) + 1;
   const lx = ex - 2, rx = ex + 2, E = PAL.eye;
   if (expr === 'fatigue') {
-    hspan(g, eyeY, lx - 1, lx + 1, PAL.sk3); hspan(g, eyeY, rx - 1, rx + 1, PAL.sk3);
+    hspan(g, eyeY, lx - 1, lx + 1, SK.sk3); hspan(g, eyeY, rx - 1, rx + 1, SK.sk3);
     P(g, lx, eyeY, E); P(g, rx, eyeY, E);
   } else if (expr === 'satisfait') {
     P(g, lx, eyeY, E); P(g, rx, eyeY, E);
-    P(g, lx, eyeY + 1, PAL.sk2); P(g, rx, eyeY + 1, PAL.sk2);
+    P(g, lx, eyeY + 1, SK.sk2); P(g, rx, eyeY + 1, SK.sk2);
   } else if (expr === 'fier') {
-    P(g, lx - 1, eyeY, PAL.sk0); P(g, lx + 1, eyeY, PAL.sk0); P(g, rx - 1, eyeY, PAL.sk0); P(g, rx + 1, eyeY, PAL.sk0);
+    P(g, lx - 1, eyeY, SK.sk0); P(g, lx + 1, eyeY, SK.sk0); P(g, rx - 1, eyeY, SK.sk0); P(g, rx + 1, eyeY, SK.sk0);
     P(g, lx, eyeY, E); P(g, rx, eyeY, E);
   } else if (expr === 'coupable') {
-    P(g, lx, eyeY, PAL.sk0); P(g, rx, eyeY, PAL.sk0);
+    P(g, lx, eyeY, SK.sk0); P(g, rx, eyeY, SK.sk0);
     P(g, lx, eyeY + 1, E); P(g, rx, eyeY + 1, E);
   } else {
     P(g, lx, eyeY, E); P(g, rx, eyeY, E);
@@ -171,15 +218,117 @@ function drawTorsoDetail(g, cx, prof, state, t, topY) {
 }
 
 // ─────────────────────────────────────────────
-//  Build full character grid
+//  Hair — styles : short_dark | fade | curly | shaved
 // ─────────────────────────────────────────────
-function buildGrid(state, fr, expr, garminGlow, pose) {
+function drawHair(g, cx, hcy, hrx, hry, style) {
+  if (style === 'shaved') {
+    hspan(g, Math.round(hcy - hry + 0.6), cx - 2, cx + 2, PAL.ha0);
+    hspan(g, Math.round(hcy - hry - 0.2), cx - 1.5, cx + 1.5, PAL.ha0);
+    return;
+  }
+  if (style === 'fade') {
+    for (let y = hcy - hry - 1.5; y <= hcy - 2.4; y++) {
+      const ry = (y - hcy) / (hry + 0.9);
+      const half = (hrx + 0.6) * Math.sqrt(Math.max(0, 1 - ry * ry)) * 0.68;
+      shadeRow(g, y, cx - 0.2, half, PAL.ha0, PAL.ha0, PAL.ha1, false);
+    }
+    hspan(g, Math.round(hcy - hry + 0.5), cx - 3.2, cx - 1, PAL.ha0);
+    hspan(g, Math.round(hcy - hry + 0.5), cx + 1, cx + 3, PAL.ha0);
+    return;
+  }
+  if (style === 'curly') {
+    for (let y = hcy - hry - 3; y <= hcy - 1.2; y++) {
+      const ry = (y - hcy) / (hry + 2);
+      const half = (hrx + 2.4) * Math.sqrt(Math.max(0, 1 - ry * ry));
+      shadeRow(g, y, cx - 0.2, half, PAL.ha0, PAL.ha0, PAL.ha1, false);
+    }
+    P(g, Math.round(cx - 4.8), Math.round(hcy - hry - 0.8), PAL.ha1);
+    P(g, Math.round(cx + 4.2), Math.round(hcy - hry - 1.0), PAL.ha1);
+    P(g, Math.round(cx - 1.8), Math.round(hcy - hry - 3.2), PAL.ha1);
+    P(g, Math.round(cx + 1.4), Math.round(hcy - hry - 3.6), PAL.ha1);
+    P(g, Math.round(cx + 3.0), Math.round(hcy - hry - 2.6), PAL.ha1);
+    for (let y = Math.round(hcy - 1); y <= Math.round(hcy + 3); y++) {
+      P(g, Math.round(cx - hrx - 0.4), y, PAL.ha0); P(g, Math.round(cx + hrx + 0.4), y, PAL.ha0);
+    }
+    P(g, Math.round(cx - hrx - 0.7), Math.round(hcy + 3), PAL.ha0);
+    P(g, Math.round(cx + hrx + 0.6), Math.round(hcy + 3.4), PAL.ha0);
+    return;
+  }
+  // default: short_dark
+  for (let y = hcy - hry - 1.5; y <= hcy - 1.6; y++) {
+    const ry = (y - hcy) / (hry + 0.9);
+    const half = (hrx + 0.9) * Math.sqrt(Math.max(0, 1 - ry * ry));
+    shadeRow(g, y, cx - 0.2, half, PAL.ha0, PAL.ha0, PAL.ha1, false);
+  }
+  P(g, Math.round(cx - 3.6), Math.round(hcy - hry + 0.3), PAL.ha0);
+  P(g, Math.round(cx + 3.4), Math.round(hcy - hry + 0.6), PAL.ha0);
+  P(g, Math.round(cx + 2), Math.round(hcy - hry - 1.3), PAL.ha0);
+  P(g, Math.round(cx - 2), Math.round(hcy - hry - 1.5), PAL.ha0);
+  P(g, Math.round(cx - 2), Math.round(hcy - 2.2), PAL.ha0);
+  P(g, Math.round(cx - 1), Math.round(hcy - 2.6), PAL.ha0);
+  P(g, Math.round(cx + 1), Math.round(hcy - 2.4), PAL.ha0);
+  P(g, Math.round(cx + 2.4), Math.round(hcy - 1.8), PAL.ha0);
+  for (let y = Math.round(hcy - 1); y <= Math.round(hcy + 3); y++) {
+    P(g, Math.round(cx - hrx - 0.4), y, PAL.ha0); P(g, Math.round(cx + hrx + 0.4), y, PAL.ha0);
+  }
+  P(g, Math.round(cx - hrx - 0.7), Math.round(hcy + 3), PAL.ha0);
+  P(g, Math.round(cx + hrx + 0.6), Math.round(hcy + 3.4), PAL.ha0);
+  P(g, Math.round(cx - 2), Math.round(hcy - hry - 0.6), PAL.ha1);
+  P(g, Math.round(cx - 1), Math.round(hcy - hry - 0.9), PAL.ha1);
+}
+
+// ─────────────────────────────────────────────
+//  Glasses — styles : none | round | sport | default
+// ─────────────────────────────────────────────
+function drawGlasses(g, cx, hcy, style) {
+  if (style === 'none') return;
+  const gy0 = Math.round(hcy) + 1, gl = PAL.gl;
+  if (style === 'round') {
+    const lx = Math.round(cx - 2.5), rx = Math.round(cx + 2.5);
+    hspan(g, gy0 - 1, lx - 1, lx + 1, gl); hspan(g, gy0 - 1, rx - 1, rx + 1, gl);
+    P(g, lx - 2, gy0, gl); P(g, lx + 2, gy0, gl); P(g, rx - 2, gy0, gl); P(g, rx + 2, gy0, gl);
+    hspan(g, gy0 + 1, lx - 1, lx + 1, gl); hspan(g, gy0 + 1, rx - 1, rx + 1, gl);
+    P(g, Math.round(cx), gy0, gl);
+    P(g, lx - 3, gy0 - 1, gl); P(g, rx + 3, gy0 - 1, gl);
+    return;
+  }
+  if (style === 'sport') {
+    hspan(g, gy0 - 1, cx - 5, cx + 5, gl);
+    hspan(g, gy0, cx - 5.2, cx - 0.8, gl); hspan(g, gy0, cx + 0.8, cx + 5.2, gl);
+    hspan(g, gy0 + 1, cx - 4.6, cx + 4.6, gl);
+    P(g, Math.round(cx), gy0 - 1, gl);
+    P(g, Math.round(cx - 5.6), gy0 - 1, gl); P(g, Math.round(cx + 5.6), gy0 - 1, gl);
+    return;
+  }
+  // default rectangular
+  hspan(g, gy0 - 1, cx - 4, cx - 1, gl); hspan(g, gy0 - 1, cx + 1, cx + 4, gl);
+  hspan(g, gy0 + 1, cx - 3.8, cx - 1.2, gl); hspan(g, gy0 + 1, cx + 1.2, cx + 3.8, gl);
+  P(g, Math.round(cx - 4), gy0, gl); P(g, Math.round(cx + 4), gy0, gl);
+  P(g, Math.round(cx - 1), gy0, gl); P(g, Math.round(cx + 1), gy0, gl);
+  P(g, Math.round(cx), gy0 - 1, gl);
+  P(g, Math.round(cx - 4.6), gy0 - 1, gl); P(g, Math.round(cx + 4.6), gy0 - 1, gl);
+  P(g, Math.round(cx - 2), gy0 - 1, PAL.gsc);
+}
+
+// ─────────────────────────────────────────────
+//  Build full character grid (avec customisation)
+// ─────────────────────────────────────────────
+export function buildGrid(state, fr, expr, garminGlow, pose, custom = {}) {
   const g = mkgrid();
   const cx = 15.5, t = (state - 1) / 3;
   const prof = makeProfile(state);
   const breath = [0, 0, 1, 1][fr];
   const shrug = [0, 1, 1, 0][fr];
   const slouch = Math.round((1 - t) * 1);
+
+  // Résolution des palettes de personnalisation
+  const SK = SKIN_TONES[custom?.skin] || SKIN_TONES.medium;
+  const OF_base = OUTFIT_PALS[custom?.outfit] || OUTFIT_PALS.default;
+  const OF = custom?.shoes === 'running'
+    ? { ...OF_base, so: '#1e1c2c', soa: '#FF8040' }
+    : OF_base;
+  const hairStyle = custom?.hair || 'short_dark';
+  const glassesStyle = custom?.glasses ?? 'none';
 
   // LEGS
   const legGap = 2.0, legHalf = lerp(2.8, 2.5, t);
@@ -188,36 +337,36 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
     const ph = [1, 0.25, -1, -0.25][fr];
     const hipY = 43, lHipX = cx - 1.7, rHipX = cx + 1.7;
     const lAnkX = lHipX + ph * 4.6, lAnkY = 59 - Math.max(0, ph) * 2, lKnX = lHipX + ph * 2.6, lKnY = 51;
-    limb(g, lHipX, hipY, lKnX, lKnY, 2.3, PAL.jo1, PAL.jo2, PAL.jo0);
-    limb(g, lKnX, lKnY, lAnkX, lAnkY, 2.0, PAL.jo1, PAL.jo2, PAL.jo0);
+    limb(g, lHipX, hipY, lKnX, lKnY, 2.3, OF.jo1, OF.jo2, OF.jo0);
+    limb(g, lKnX, lKnY, lAnkX, lAnkY, 2.0, OF.jo1, OF.jo2, OF.jo0);
     const rAnkX = rHipX - ph * 4.6, rAnkY = 59 - Math.max(0, -ph) * 2, rKnX = rHipX - ph * 2.6, rKnY = 51;
-    limb(g, rHipX, hipY, rKnX, rKnY, 2.3, PAL.jo1, PAL.jo2, PAL.jo0);
-    limb(g, rKnX, rKnY, rAnkX, rAnkY, 2.0, PAL.jo1, PAL.jo2, PAL.jo0);
-    disc(g, lAnkX + 0.6, lAnkY + 1, 2.1, PAL.so, '#0c0810', PAL.jo0); hspan(g, Math.round(lAnkY) + 2, lAnkX - 0.8, lAnkX + 2.2, PAL.soa);
-    disc(g, rAnkX + 0.6, rAnkY + 1, 2.1, PAL.so, '#0c0810', PAL.jo0); hspan(g, Math.round(rAnkY) + 2, rAnkX - 0.8, rAnkX + 2.2, PAL.soa);
+    limb(g, rHipX, hipY, rKnX, rKnY, 2.3, OF.jo1, OF.jo2, OF.jo0);
+    limb(g, rKnX, rKnY, rAnkX, rAnkY, 2.0, OF.jo1, OF.jo2, OF.jo0);
+    disc(g, lAnkX + 0.6, lAnkY + 1, 2.1, OF.so, '#0c0810', OF.jo0); hspan(g, Math.round(lAnkY) + 2, lAnkX - 0.8, lAnkX + 2.2, OF.soa);
+    disc(g, rAnkX + 0.6, rAnkY + 1, 2.1, OF.so, '#0c0810', OF.jo0); hspan(g, Math.round(rAnkY) + 2, rAnkX - 0.8, rAnkX + 2.2, OF.soa);
   } else if (pose === 'sit') {
-    limb(g, cx - 1.7, 44, cx - 5, 50, 2.2, PAL.jo1, PAL.jo2, PAL.jo0); limb(g, cx - 5, 50, cx - 4, 58, 1.9, PAL.jo1, PAL.jo2, PAL.jo0);
-    limb(g, cx + 1.7, 44, cx + 5, 50, 2.2, PAL.jo1, PAL.jo2, PAL.jo0); limb(g, cx + 5, 50, cx + 4, 58, 1.9, PAL.jo1, PAL.jo2, PAL.jo0);
-    disc(g, cx - 4, 59, 2.1, PAL.so, '#0c0810', PAL.jo0); hspan(g, 60, cx - 6.4, cx - 1.8, PAL.soa);
-    disc(g, cx + 4, 59, 2.1, PAL.so, '#0c0810', PAL.jo0); hspan(g, 60, cx + 1.8, cx + 6.4, PAL.soa);
+    limb(g, cx - 1.7, 44, cx - 5, 50, 2.2, OF.jo1, OF.jo2, OF.jo0); limb(g, cx - 5, 50, cx - 4, 58, 1.9, OF.jo1, OF.jo2, OF.jo0);
+    limb(g, cx + 1.7, 44, cx + 5, 50, 2.2, OF.jo1, OF.jo2, OF.jo0); limb(g, cx + 5, 50, cx + 4, 58, 1.9, OF.jo1, OF.jo2, OF.jo0);
+    disc(g, cx - 4, 59, 2.1, OF.so, '#0c0810', OF.jo0); hspan(g, 60, cx - 6.4, cx - 1.8, OF.soa);
+    disc(g, cx + 4, 59, 2.1, OF.so, '#0c0810', OF.jo0); hspan(g, 60, cx + 1.8, cx + 6.4, OF.soa);
   } else if (pose === 'slump') {
-    limb(g, cx - 1.7, 46, cx - 7, 51, 2.2, PAL.jo1, PAL.jo2, PAL.jo0); limb(g, cx - 7, 51, cx - 7, 59, 1.9, PAL.jo1, PAL.jo2, PAL.jo0);
-    limb(g, cx + 1.7, 46, cx + 7, 51, 2.2, PAL.jo1, PAL.jo2, PAL.jo0); limb(g, cx + 7, 51, cx + 7, 59, 1.9, PAL.jo1, PAL.jo2, PAL.jo0);
-    disc(g, cx - 7, 60, 2.1, PAL.so, '#0c0810', PAL.jo0); hspan(g, 61, cx - 9.4, cx - 4.8, PAL.soa);
-    disc(g, cx + 7, 60, 2.1, PAL.so, '#0c0810', PAL.jo0); hspan(g, 61, cx + 4.8, cx + 9.4, PAL.soa);
+    limb(g, cx - 1.7, 46, cx - 7, 51, 2.2, OF.jo1, OF.jo2, OF.jo0); limb(g, cx - 7, 51, cx - 7, 59, 1.9, OF.jo1, OF.jo2, OF.jo0);
+    limb(g, cx + 1.7, 46, cx + 7, 51, 2.2, OF.jo1, OF.jo2, OF.jo0); limb(g, cx + 7, 51, cx + 7, 59, 1.9, OF.jo1, OF.jo2, OF.jo0);
+    disc(g, cx - 7, 60, 2.1, OF.so, '#0c0810', OF.jo0); hspan(g, 61, cx - 9.4, cx - 4.8, OF.soa);
+    disc(g, cx + 7, 60, 2.1, OF.so, '#0c0810', OF.jo0); hspan(g, 61, cx + 4.8, cx + 9.4, OF.soa);
   } else if (pose === 'celebrate') {
     const cls = lcx - 0.5, crs = rcx + 0.5;
-    for (let y = 43; y <= 61; y++) { shadeRow(g, y, cls, legHalf, PAL.jo1, PAL.jo2, PAL.jo0, false); shadeRow(g, y, crs, legHalf, PAL.jo1, PAL.jo2, PAL.jo0, false); }
-    for (let y = 60; y <= 63; y++) { shadeRow(g, y, cls, legHalf + 0.5, PAL.so, '#0c0810', PAL.jo0, false); shadeRow(g, y, crs, legHalf + 0.5, PAL.so, '#0c0810', PAL.jo0, false); }
-    hspan(g, 63, cls - 0.6, cls + legHalf + 0.7, PAL.soa); hspan(g, 63, crs - 0.6, crs + legHalf + 0.7, PAL.soa);
+    for (let y = 43; y <= 61; y++) { shadeRow(g, y, cls, legHalf, OF.jo1, OF.jo2, OF.jo0, false); shadeRow(g, y, crs, legHalf, OF.jo1, OF.jo2, OF.jo0, false); }
+    for (let y = 60; y <= 63; y++) { shadeRow(g, y, cls, legHalf + 0.5, OF.so, '#0c0810', OF.jo0, false); shadeRow(g, y, crs, legHalf + 0.5, OF.so, '#0c0810', OF.jo0, false); }
+    hspan(g, 63, cls - 0.6, cls + legHalf + 0.7, OF.soa); hspan(g, 63, crs - 0.6, crs + legHalf + 0.7, OF.soa);
   } else {
-    for (let y = 43; y <= 61; y++) { shadeRow(g, y, lcx, legHalf, PAL.jo1, PAL.jo2, PAL.jo0, false); shadeRow(g, y, rcx, legHalf, PAL.jo1, PAL.jo2, PAL.jo0, false); }
-    if (state >= 4) { for (let y = 45; y <= 55; y++) { P(g, Math.round(lcx - 1), y, PAL.jo0); P(g, Math.round(rcx - 1), y, PAL.jo0); } }
-    for (let y = 60; y <= 63; y++) { shadeRow(g, y, lcx, legHalf + 0.5, PAL.so, '#0c0810', PAL.jo0, false); shadeRow(g, y, rcx, legHalf + 0.5, PAL.so, '#0c0810', PAL.jo0, false); }
-    hspan(g, 63, lcx - 0.6, lcx + legHalf + 0.7, PAL.soa); hspan(g, 63, rcx - 0.6, rcx + legHalf + 0.7, PAL.soa);
+    for (let y = 43; y <= 61; y++) { shadeRow(g, y, lcx, legHalf, OF.jo1, OF.jo2, OF.jo0, false); shadeRow(g, y, rcx, legHalf, OF.jo1, OF.jo2, OF.jo0, false); }
+    if (state >= 4) { for (let y = 45; y <= 55; y++) { P(g, Math.round(lcx - 1), y, OF.jo0); P(g, Math.round(rcx - 1), y, OF.jo0); } }
+    for (let y = 60; y <= 63; y++) { shadeRow(g, y, lcx, legHalf + 0.5, OF.so, '#0c0810', OF.jo0, false); shadeRow(g, y, rcx, legHalf + 0.5, OF.so, '#0c0810', OF.jo0, false); }
+    hspan(g, 63, lcx - 0.6, lcx + legHalf + 0.7, OF.soa); hspan(g, 63, rcx - 0.6, rcx + legHalf + 0.7, OF.soa);
   }
   // pelvis
-  for (let y = 39; y <= 44; y++) { const h = lerp(prof(39), legGap + legHalf + 0.6, (y - 39) / 6) + 0.5; shadeRow(g, y, cx, h, PAL.jo1, PAL.jo2, PAL.jo0, y > 43); }
+  for (let y = 39; y <= 44; y++) { const h = lerp(prof(39), legGap + legHalf + 0.6, (y - 39) / 6) + 0.5; shadeRow(g, y, cx, h, OF.jo1, OF.jo2, OF.jo0, y > 43); }
 
   // TORSO
   const topY = 16 - slouch;
@@ -230,6 +379,13 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
   hspan(g, topY, cx - prof(topY) + 1.5, cx + prof(topY) - 1.5, PAL.sh0);
   drawTorsoDetail(g, cx, prof, state, t, topY);
   P(g, cx - 3.4, 22, PAL.acc); P(g, cx - 2.4, 22, PAL.acc2);
+  // Dossard pour tenue compétition
+  if (custom?.outfit === 'competition') {
+    hspan(g, 20, cx - 3.5, cx + 3.5, '#f0e8d0'); hspan(g, 21, cx - 3.5, cx + 3.5, '#f0e8d0');
+    hspan(g, 22, cx - 3.5, cx + 3.5, '#f0e8d0'); hspan(g, 23, cx - 3.5, cx + 3.5, '#f0e8d0');
+    hspan(g, 24, cx - 3.5, cx + 3.5, '#f0e8d0');
+    P(g, Math.round(cx - 1), 22, PAL.sh2); P(g, Math.round(cx), 22, PAL.sh2); P(g, Math.round(cx + 1), 22, PAL.sh2);
+  }
 
   // ARMS
   const armHalf = lerp(2.9, 2.4, t);
@@ -243,12 +399,12 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
       let ah = armHalf * (1 - (y - aTop) / (aBot - aTop) * 0.16);
       if (state >= 3 && y >= sleeveY + 1 && y <= sleeveY + 4) ah += lerp(0.2, 0.7, t);
       const off = edgeAt(y) + ah - 0.8; const X = cx + side * off; const isSkin = y > sleeveY;
-      const base = isSkin ? PAL.sk1 : PAL.sh1, sh = isSkin ? PAL.sk2 : PAL.sh2, hi = isSkin ? PAL.sk0 : PAL.sh0;
+      const base = isSkin ? SK.sk1 : PAL.sh1, sh = isSkin ? SK.sk2 : PAL.sh2, hi = isSkin ? SK.sk0 : PAL.sh0;
       shadeRow(g, y, X, ah, base, sh, hi, false);
-      P(g, Math.round(X - side * ah), y, isSkin ? PAL.sk2 : PAL.sh2);
-      if (state >= 3 && isSkin && y >= sleeveY + 1 && y <= sleeveY + 4) { P(g, Math.round(X - side * (armHalf - 1)), y, PAL.sk0); if (y >= sleeveY + 2) P(g, Math.round(X + side), y, PAL.sk3); }
+      P(g, Math.round(X - side * ah), y, isSkin ? SK.sk2 : PAL.sh2);
+      if (state >= 3 && isSkin && y >= sleeveY + 1 && y <= sleeveY + 4) { P(g, Math.round(X - side * (armHalf - 1)), y, SK.sk0); if (y >= sleeveY + 2) P(g, Math.round(X + side), y, SK.sk3); }
     }
-    shadeRow(g, aBot, cx + side * (edgeAt(aBot) + armHalf - 0.8), armHalf - 0.2, PAL.sk1, PAL.sk2, PAL.sk0, false);
+    shadeRow(g, aBot, cx + side * (edgeAt(aBot) + armHalf - 0.8), armHalf - 0.2, SK.sk1, SK.sk2, SK.sk0, false);
     const slOff = edgeAt(sleeveY) + armHalf - 0.8; hspan(g, sleeveY, cx + side * slOff - armHalf + 0.6, cx + side * slOff + armHalf - 0.6, PAL.acc);
     return wrist;
   };
@@ -256,10 +412,10 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
   const bentArm = (shX, shY, elX, elY, haX, haY, r, dumb) => {
     limb(g, shX, shY, elX, elY, r + 0.2, PAL.sh1, PAL.sh2, PAL.sh0);
     P(g, Math.round(lerp(shX, elX, 0.66)), Math.round(lerp(shY, elY, 0.66)), PAL.acc);
-    limb(g, elX, elY, haX, haY, r - 0.2, PAL.sk1, PAL.sk2, PAL.sk0);
-    if (state >= 3) { disc(g, lerp(elX, haX, 0.45), lerp(elY, haY, 0.45), r * 0.5, PAL.sk0, PAL.sk1, PAL.sk0); }
-    disc(g, haX, haY, r - 0.3, PAL.sk1, PAL.sk2, PAL.sk0);
-    if (dumb) { const dw = state >= 4 ? 1.7 : 1.3; disc(g, haX, haY - 2.1, dw, PAL.gs, '#070409', PAL.jo0); disc(g, haX, haY + 2.1, dw, PAL.gs, '#070409', PAL.jo0); P(g, Math.round(haX), Math.round(haY), PAL.jo2); }
+    limb(g, elX, elY, haX, haY, r - 0.2, SK.sk1, SK.sk2, SK.sk0);
+    if (state >= 3) { disc(g, lerp(elX, haX, 0.45), lerp(elY, haY, 0.45), r * 0.5, SK.sk0, SK.sk1, SK.sk0); }
+    disc(g, haX, haY, r - 0.3, SK.sk1, SK.sk2, SK.sk0);
+    if (dumb) { const dw = state >= 4 ? 1.7 : 1.3; disc(g, haX, haY - 2.1, dw, PAL.gs, '#070409', OF.jo0); disc(g, haX, haY + 2.1, dw, PAL.gs, '#070409', OF.jo0); P(g, Math.round(haX), Math.round(haY), OF.jo2); }
   };
 
   let leftWrist;
@@ -299,8 +455,8 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
 
   // NECK
   const neckHalf = lerp(2.2, 2.7, t);
-  for (let y = 13; y <= 15 - slouch; y++) shadeRow(g, y, cx, neckHalf, PAL.sk1, PAL.sk2, PAL.sk0, y > 13);
-  if (state >= 3) { P(g, Math.round(cx - neckHalf - 1), 15 - slouch, PAL.sk2); P(g, Math.round(cx + neckHalf + 1), 15 - slouch, PAL.sk2); }
+  for (let y = 13; y <= 15 - slouch; y++) shadeRow(g, y, cx, neckHalf, SK.sk1, SK.sk2, SK.sk0, y > 13);
+  if (state >= 3) { P(g, Math.round(cx - neckHalf - 1), 15 - slouch, SK.sk2); P(g, Math.round(cx + neckHalf + 1), 15 - slouch, SK.sk2); }
 
   // HEAD
   const hcy = 8 - slouch, hrx = 4.7, hry = 5.7;
@@ -308,30 +464,20 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
   for (let y = -Math.ceil(hry); y <= Math.ceil(hry); y++) {
     const ry = y / hry; if (Math.abs(ry) > 1) continue;
     const half = hrx * Math.sqrt(1 - ry * ry) * jaw(y);
-    shadeRow(g, hcy + y, cx, half, PAL.sk1, PAL.sk2, PAL.sk0, false);
+    shadeRow(g, hcy + y, cx, half, SK.sk1, SK.sk2, SK.sk0, false);
   }
-  P(g, cx - hrx, hcy + 1, PAL.sk2); P(g, cx + hrx, hcy + 1, PAL.sk2);
+  P(g, cx - hrx, hcy + 1, SK.sk2); P(g, cx + hrx, hcy + 1, SK.sk2);
   for (let y = Math.round(hcy + 2); y <= Math.round(hcy + hry); y++) {
     const ry = (y - hcy) / hry; const half = hrx * Math.sqrt(Math.max(0, 1 - ry * ry)) * jaw(y);
-    P(g, Math.round(cx - half + 0.4), y, PAL.sk3); P(g, Math.round(cx + half - 0.4), y, PAL.sk3);
+    P(g, Math.round(cx - half + 0.4), y, SK.sk3); P(g, Math.round(cx + half - 0.4), y, SK.sk3);
   }
-  hspan(g, Math.round(hcy + hry - 0.3), cx - 2.4, cx + 2.4, PAL.sk3);
-  P(g, Math.round(cx - 1.6), Math.round(hcy + 2.7), PAL.sk3); P(g, Math.round(cx + 1.6), Math.round(hcy + 2.7), PAL.sk3);
-  if (state <= 1) { hspan(g, Math.round(hcy + hry + 0.4), cx - 2, cx + 2, PAL.sk2); }
-  if (state >= 3) { P(g, Math.round(cx - 3.2), Math.round(hcy + 2.6), PAL.sk2); P(g, Math.round(cx + 3.2), Math.round(hcy + 2.6), PAL.sk2); }
+  hspan(g, Math.round(hcy + hry - 0.3), cx - 2.4, cx + 2.4, SK.sk3);
+  P(g, Math.round(cx - 1.6), Math.round(hcy + 2.7), SK.sk3); P(g, Math.round(cx + 1.6), Math.round(hcy + 2.7), SK.sk3);
+  if (state <= 1) { hspan(g, Math.round(hcy + hry + 0.4), cx - 2, cx + 2, SK.sk2); }
+  if (state >= 3) { P(g, Math.round(cx - 3.2), Math.round(hcy + 2.6), SK.sk2); P(g, Math.round(cx + 3.2), Math.round(hcy + 2.6), SK.sk2); }
 
   // HAIR
-  for (let y = hcy - hry - 1.5; y <= hcy - 1.6; y++) {
-    const ry = (y - hcy) / (hry + 0.9); const half = (hrx + 0.9) * Math.sqrt(Math.max(0, 1 - ry * ry));
-    shadeRow(g, y, cx - 0.2, half, PAL.ha0, PAL.ha0, PAL.ha1, false);
-  }
-  P(g, Math.round(cx - 3.6), Math.round(hcy - hry + 0.3), PAL.ha0); P(g, Math.round(cx + 3.4), Math.round(hcy - hry + 0.6), PAL.ha0);
-  P(g, Math.round(cx + 2), Math.round(hcy - hry - 1.3), PAL.ha0); P(g, Math.round(cx - 2), Math.round(hcy - hry - 1.5), PAL.ha0);
-  P(g, Math.round(cx - 2), Math.round(hcy - 2.2), PAL.ha0); P(g, Math.round(cx - 1), Math.round(hcy - 2.6), PAL.ha0);
-  P(g, Math.round(cx + 1), Math.round(hcy - 2.4), PAL.ha0); P(g, Math.round(cx + 2.4), Math.round(hcy - 1.8), PAL.ha0);
-  for (let y = Math.round(hcy - 1); y <= Math.round(hcy + 3); y++) { P(g, Math.round(cx - hrx - 0.4), y, PAL.ha0); P(g, Math.round(cx + hrx + 0.4), y, PAL.ha0); }
-  P(g, Math.round(cx - hrx - 0.7), Math.round(hcy + 3), PAL.ha0); P(g, Math.round(cx + hrx + 0.6), Math.round(hcy + 3.4), PAL.ha0);
-  P(g, Math.round(cx - 2), Math.round(hcy - hry - 0.6), PAL.ha1); P(g, Math.round(cx - 1), Math.round(hcy - hry - 0.9), PAL.ha1);
+  drawHair(g, cx, hcy, hrx, hry, hairStyle);
 
   // OUTLINE
   const isFill = (x, y) => x >= 0 && x < 32 && y >= 0 && y < 64 && g[y][x];
@@ -342,21 +488,14 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
   }
   out.forEach(([x, y]) => g[y][x] = PAL.ol);
 
-  // FACE (brows, nose, mouth before glasses)
-  drawFaceFeatures(g, cx, hcy, expr);
+  // FACE
+  drawFaceFeatures(g, cx, hcy, expr, SK);
 
   // GLASSES
-  const gy0 = Math.round(hcy) + 1, gl = PAL.gl;
-  hspan(g, gy0 - 1, cx - 4, cx - 1, gl); hspan(g, gy0 - 1, cx + 1, cx + 4, gl);
-  hspan(g, gy0 + 1, cx - 3.8, cx - 1.2, gl); hspan(g, gy0 + 1, cx + 1.2, cx + 3.8, gl);
-  P(g, Math.round(cx - 4), gy0, gl); P(g, Math.round(cx + 4), gy0, gl);
-  P(g, Math.round(cx - 1), gy0, gl); P(g, Math.round(cx + 1), gy0, gl);
-  P(g, Math.round(cx), gy0 - 1, gl);
-  P(g, Math.round(cx - 4.6), gy0 - 1, gl); P(g, Math.round(cx + 4.6), gy0 - 1, gl);
-  P(g, Math.round(cx - 2), gy0 - 1, PAL.gsc);
+  drawGlasses(g, cx, hcy, glassesStyle);
 
-  // EYES (over glasses)
-  drawEyes(g, cx, hcy, expr);
+  // EYES
+  drawEyes(g, cx, hcy, expr, SK);
 
   // GARMIN
   const gw = Math.round(leftWrist[0]), gyy = Math.round(leftWrist[1]);
@@ -367,7 +506,7 @@ function buildGrid(state, fr, expr, garminGlow, pose) {
 }
 
 // ─────────────────────────────────────────────
-//  Scene rendering (640×360 hero canvas)
+//  Scene rendering (640×360 hero canvas) — inchangé
 // ─────────────────────────────────────────────
 function R(ctx, x, y, w, h, S) { ctx.fillRect(Math.round(x * S), Math.round(y * S), Math.round(w * S), Math.round(h * S)); }
 
@@ -448,7 +587,7 @@ function rack(ctx, x, y, S) {
 // ─────────────────────────────────────────────
 const SCENE_TO_POSE = { gym: 'lift', route: 'run', repos: 'sit', jalon: 'celebrate', absent: 'slump' };
 
-export default function JamraAvatar({ bodyState = 1, expression = 'neutral', scene = 'gym', weight, bf }) {
+export default function JamraAvatar({ bodyState = 1, expression = 'neutral', scene = 'gym', weight, bf, customization = {} }) {
   const heroRef = useRef(null);
   const offRef = useRef(null);
   const rafRef = useRef(null);
@@ -466,15 +605,13 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
       const pose = SCENE_TO_POSE[scene] || 'idle';
       const hopDY = pose === 'celebrate' ? [-2, -3, -3, -2][fr] : 0;
 
-      // blit char to offscreen
-      const g = buildGrid(bodyState, fr, expression, garminGlow, pose);
+      const g = buildGrid(bodyState, fr, expression, garminGlow, pose, customization);
       const offCtx = off.getContext('2d');
       offCtx.clearRect(0, 0, 32, 64);
       for (let y = 0; y < 64; y++) for (let x = 0; x < 32; x++) {
         if (g[y][x]) { offCtx.fillStyle = g[y][x]; offCtx.fillRect(x, y, 1, 1); }
       }
 
-      // draw hero
       const hc = heroRef.current;
       if (!hc) { rafRef.current = requestAnimationFrame(loop); return; }
       const ctx = hc.getContext('2d');
@@ -482,17 +619,14 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
       const W = hc.width, H = hc.height, S = W / 320;
       drawScene(ctx, scene, S, t);
 
-      // aura
       const auraI = lerp(.12, .5, (bodyState - 1) / 3) * (0.85 + 0.15 * Math.sin(t / 500));
       let ag = ctx.createRadialGradient(160 * S, 108 * S, 0, 160 * S, 108 * S, 70 * S);
       ag.addColorStop(0, `rgba(255,77,0,${auraI})`); ag.addColorStop(1, 'rgba(255,77,0,0)');
       ctx.fillStyle = ag; ctx.fillRect(0, 0, W, H);
 
-      // shadow
       ctx.fillStyle = 'rgba(0,0,0,.45)';
       ctx.beginPath(); ctx.ellipse(160 * S, 151 * S, 26 * S, 5 * S, 0, 0, 7); ctx.fill();
 
-      // character
       const ch = 104, cw = ch * 32 / 64, dx = (320 - cw) / 2, dy = 152 - ch;
       ctx.drawImage(off, 0, 0, 32, 64, Math.round(dx * S), Math.round((dy + hopDY) * S), Math.round(cw * S), Math.round(ch * S));
 
@@ -501,39 +635,27 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
 
     rafRef.current = requestAnimationFrame(loop);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [bodyState, expression, scene]);
+  }, [bodyState, expression, scene, customization]);
 
   const stateLabels = ['Départ', 'Phase 1', 'Phase 2', 'Objectif'];
   const bfValues = ['~30', '~18', '~14', '~12'];
 
-  // Idle CSS animation : respiration lente sur le container, micro-bounce sur le canvas
-  const idleStyle = {
-    animation: 'jmrBreath 4s ease-in-out infinite',
-  };
+  const idleStyle = { animation: 'jmrBreath 4s ease-in-out infinite' };
   const canvasStyle = {
-    display: 'block',
-    width: '100%',
-    height: 'auto',
+    display: 'block', width: '100%', height: 'auto',
     imageRendering: 'pixelated',
     animation: 'jmrBounce 2.4s ease-in-out infinite',
   };
 
   return (
     <div className="relative rounded-[18px] overflow-hidden border border-subtle" style={{ background: '#070405', ...idleStyle }}>
-      <canvas
-        ref={heroRef}
-        width={640}
-        height={360}
-        style={canvasStyle}
-      />
-      {/* Scene label */}
+      <canvas ref={heroRef} width={640} height={360} style={canvasStyle} />
       <div className="absolute top-2.5 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{ background: 'rgba(7,4,5,.55)', backdropFilter: 'blur(2px)' }}>
         <div className="w-1.5 h-1.5 rounded-full bg-heat-orange" style={{ boxShadow: '0 0 8px #FF4D00', animation: 'jmrPulse 1.6s infinite' }} />
         <span className="font-mono text-[8px] text-[#ffe0c2] tracking-[0.5px]">
           {({ gym: 'SALLE', route: 'ROUTE', repos: 'RÉCUP', jalon: 'OBJECTIF ✓', absent: 'INACTIF' })[scene] || scene.toUpperCase()}
         </span>
       </div>
-      {/* Name plate */}
       <div className="absolute left-0 right-0 bottom-0 flex items-end justify-between px-3.5 pb-2.5 pt-5"
         style={{ background: 'linear-gradient(to top, rgba(7,4,5,.85), rgba(7,4,5,0))' }}>
         <div>

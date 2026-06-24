@@ -19,6 +19,7 @@ const BarcodeScanner = lazy(() => import('./pages/BarcodeScanner'));
 const CreateCustomFood = lazy(() => import('./pages/CreateCustomFood'));
 const CopyMeal = lazy(() => import('./pages/CopyMeal'));
 const StravaCallback = lazy(() => import('./pages/strava/StravaCallback'));
+const AvatarCustomizer = lazy(() => import('./pages/AvatarCustomizer'));
 const OnboardingWizard = lazy(() => import('./pages/onboarding/OnboardingWizard'));
 
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -124,6 +125,7 @@ export const router = createBrowserRouter([
           { path: '/creer-aliment', element: <Suspense fallback={<PageLoader />}><CreateCustomFood /></Suspense> },
           { path: '/copier-repas', element: <Suspense fallback={<PageLoader />}><CopyMeal /></Suspense> },
           { path: '/strava/callback', element: <Suspense fallback={<PageLoader />}><StravaCallback /></Suspense> },
+          { path: '/personnalisation', element: <Suspense fallback={<PageLoader />}><AvatarCustomizer /></Suspense> },
         ],
       },
     ],
