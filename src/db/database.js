@@ -1,9 +1,7 @@
 /**
  * JAMRA - Base de données locale (IndexedDB via Dexie)
  *
- * Modèle de données Phase 1-4
- *  - v1 : schema initial local-only
- *  - v2 : ajout des champs de synchronisation (remote_id, updated_at, needs_sync)
+ * Modèle de données Phase 1 — 6 entités
  */
 
 import Dexie from 'dexie';
@@ -19,159 +17,6 @@ db.version(1).stores({
   repasTypes: '++id, nom, nombre_usages',
   repasTypeItems: '++id, repas_type_id, aliment_id',
 });
-
-// ----------------------------------------------------------------------
-// v2 (Phase 4.2) — Synchronisation Supabase
-// On ajoute remote_id (uuid Supabase), updated_at (timestamp), needs_sync (bool)
-// ----------------------------------------------------------------------
-db.version(2).stores({
-  profil:          '++id, remote_id, updated_at, needs_sync',
-  aliments:        '++id, source, source_id, nom, code_barres, is_favori, dernier_usage, nombre_usages, categorie, remote_id, updated_at, needs_sync',
-  consommations:   '++id, date, type_repas, aliment_id, [date+type_repas], remote_id, updated_at, needs_sync',
-  pesees:          '++id, &date, remote_id, updated_at, needs_sync',
-  repasTypes:      '++id, nom, nombre_usages, remote_id, updated_at, needs_sync',
-  repasTypeItems:  '++id, repas_type_id, aliment_id, remote_id, updated_at, needs_sync',
-  // Nouvelle : queue des suppressions à propager à Supabase
-  pending_deletions: '++id, table_name, remote_id, created_at',
-  // Nouvelle : état de synchronisation global (clé/valeur)
-  sync_state: '&key',
-}).upgrade(async (tx) => {
-  // Tous les records existants sont marqués "à synchroniser"
-  const now = new Date().toISOString();
-  for (const tableName of ['profil', 'aliments', 'consommations', 'pesees', 'repasTypes', 'repasTypeItems']) {
-    await tx.table(tableName).toCollection().modify(record => {
-      if (record.source === 'ciqual') {
-        // Les aliments Ciqual ne sont pas synchronisés (dataset local)
-        record.needs_sync = false;
-      } else {
-        record.needs_sync = true;
-      }
-      record.remote_id = null;
-      record.updated_at = record.updated_at || record.created_at || now;
-    });
-  }
-});
-
-// ----------------------------------------------------------------------
-// v3 (Phase 5.B) — Coaching sportif
-// ----------------------------------------------------------------------
-db.version(3).stores({
-  profil:          '++id, remote_id, updated_at, needs_sync',
-  aliments:        '++id, source, source_id, nom, code_barres, is_favori, dernier_usage, nombre_usages, categorie, remote_id, updated_at, needs_sync',
-  consommations:   '++id, date, type_repas, aliment_id, [date+type_repas], remote_id, updated_at, needs_sync',
-  pesees:          '++id, &date, remote_id, updated_at, needs_sync',
-  repasTypes:      '++id, nom, nombre_usages, remote_id, updated_at, needs_sync',
-  repasTypeItems:  '++id, repas_type_id, aliment_id, remote_id, updated_at, needs_sync',
-  pending_deletions: '++id, table_name, remote_id, created_at',
-  sync_state: '&key',
-  // Nouvelles tables coaching sportif
-  training_plans:    '++id, is_active, remote_id, updated_at, needs_sync',
-  training_sessions: '++id, date, plan_id, type, completed, [date+type], remote_id, updated_at, needs_sync',
-  strava_activities: 'id, start_date, type',
-});
-
-// ==========================================================================
-// HOOKS DEXIE AUTOMATIQUES (Phase 4.2)
-// ==========================================================================
-// Ces hooks s'exécutent avant chaque add/update sur les tables synchronisées.
-// Ils posent automatiquement updated_at et needs_sync, pour que la sync engine
-// puisse détecter les records à pousser.
-//
-// Exception : les aliments `source = 'ciqual'` (dataset fixe, non syncé).
-// ==========================================================================
-
-const SYNCED_TABLES = ['profil', 'aliments', 'consommations', 'pesees', 'repasTypes', 'repasTypeItems', 'training_plans', 'training_sessions'];
-
-for (const tableName of SYNCED_TABLES) {
-  db[tableName].hook('creating', function (primKey, obj) {
-    // Les aliments Ciqual ne sont jamais synchronisés
-    if (obj.source === 'ciqual') {
-      obj.needs_sync = false;
-      return;
-    }
-    // Les records qui viennent d'un pull Supabase passent tels quels
-    if (obj.__from_remote) {
-      delete obj.__from_remote;
-      if (obj.needs_sync === undefined) obj.needs_sync = false;
-      return;
-    }
-    // Mutation locale normale
-    if (obj.updated_at === undefined) obj.updated_at = nowISO();
-    if (obj.needs_sync === undefined) obj.needs_sync = true;
-    if (obj.remote_id === undefined) obj.remote_id = null;
-    // Déclenche une sync en arrière-plan après le commit
-    this.onsuccess = () => triggerSync();
-  });
-
-  db[tableName].hook('updating', function (modifications, primKey, obj) {
-    // Les updates marqués __from_remote passent tels quels, on enlève juste le flag
-    if (modifications.__from_remote) {
-      const rest = { ...modifications };
-      delete rest.__from_remote;
-      return rest;
-    }
-
-    // Si l'update ne touche QUE des champs internes de sync, on passe tel quel
-    const keys = Object.keys(modifications);
-    const isPureSyncUpdate = keys.every(k => ['updated_at', 'needs_sync', 'remote_id'].includes(k));
-    if (isPureSyncUpdate) return;
-
-    // Aliments ciqual : pas de sync
-    if (obj.source === 'ciqual') return;
-
-    // Mutation locale normale : on tag pour sync et on déclenche le flush
-    this.onsuccess = () => triggerSync();
-    return {
-      ...modifications,
-      updated_at: nowISO(),
-      needs_sync: true,
-    };
-  });
-}
-
-// ==========================================================================
-// HELPERS SYNC (Phase 4.2)
-// ==========================================================================
-
-function nowISO() {
-  return new Date().toISOString();
-}
-
-/**
- * Marque un record comme à synchroniser. À appeler lors de toute mutation
- * sur une table qui est synchronisée avec Supabase.
- */
-function withSyncFields(record, { keepRemote = true } = {}) {
-  return {
-    ...record,
-    updated_at: nowISO(),
-    needs_sync: true,
-    ...(keepRemote ? {} : { remote_id: null }),
-  };
-}
-
-/**
- * Enregistre une suppression en attente pour propagation à Supabase.
- * Si le record n'a jamais été push (remote_id null), pas besoin de suppression distante.
- */
-async function enqueueDeletion(tableName, record) {
-  if (!record?.remote_id) return;
-  await db.pending_deletions.add({
-    table_name: tableName,
-    remote_id: record.remote_id,
-    created_at: nowISO(),
-  });
-}
-
-// Fallback appelé après une mutation pour déclencher un flush de la sync.
-// Rempli à la volée par sync/engine.js pour éviter les dépendances circulaires.
-let __scheduleSyncFlush = () => {};
-export function registerSyncFlushHandler(fn) {
-  __scheduleSyncFlush = typeof fn === 'function' ? fn : () => {};
-}
-function triggerSync() {
-  try { __scheduleSyncFlush(); } catch (_) {}
-}
 
 // ==========================================================================
 // PROFIL
@@ -336,8 +181,6 @@ export async function createCustomFood(data) {
     portion_defaut_g: data.portion_defaut_g || null,
     portion_defaut_nom: data.portion_defaut_nom || null,
     is_favori: false,
-    is_shared: data.is_shared || false,
-    workspace_id: data.workspace_id || null,
     dernier_usage: null,
     nombre_usages: 0,
     created_at: now,
@@ -527,10 +370,7 @@ export async function updateMealEntry(entryId, { quantite_g, type_repas }) {
 }
 
 export async function deleteMealEntry(entryId) {
-  const record = await db.consommations.get(Number(entryId));
-  await enqueueDeletion('consommations', record);
   await db.consommations.delete(Number(entryId));
-  triggerSync();
 }
 
 export async function getMealEntry(entryId) {
@@ -625,14 +465,11 @@ export async function addOrUpdateWeight({ date, poids_kg }) {
 }
 
 export async function deleteWeight(id) {
-  const record = await db.pesees.get(Number(id));
-  await enqueueDeletion('pesees', record);
   await db.pesees.delete(Number(id));
   const latest = await getLatestWeight();
   if (latest) {
-    await db.profil.update(1, { poids_actuel_kg: latest.poids_kg });
+    await db.profil.update(1, { poids_actuel_kg: latest.poids_kg, updated_at: new Date().toISOString() });
   }
-  triggerSync();
 }
 
 export async function getAllWeights() {
@@ -853,8 +690,6 @@ export async function updateCustomFood(id, data) {
     sel_100g: data.sel_100g,
     portion_defaut_g: data.portion_defaut_g || null,
     portion_defaut_nom: data.portion_defaut_nom || null,
-    is_shared: data.is_shared !== undefined ? data.is_shared : existing.is_shared,
-    workspace_id: data.workspace_id !== undefined ? data.workspace_id : existing.workspace_id,
   });
   // NB : les snapshots des consommations passées ne sont pas modifiés (historique figé).
 }
@@ -864,149 +699,7 @@ export async function deleteCustomFood(id) {
   if (!food || food.source !== 'perso') {
     throw new Error('Seuls les aliments persos peuvent être supprimés');
   }
-  await enqueueDeletion('aliments', food);
   await db.aliments.delete(Number(id));
-  triggerSync();
-}
-
-// ==========================================================================
-// TRAINING (Phase 5.B)
-// ==========================================================================
-
-/**
- * Retourne le plan d'entraînement actif de l'utilisateur, ou null.
- */
-export async function getActiveTrainingPlan() {
-  const all = await db.training_plans.toArray();
-  return all.find(p => p.is_active === true) || null;
-}
-
-/**
- * Crée ou met à jour le plan actif. Désactive tout autre plan.
- */
-export async function saveTrainingPlan(data) {
-  const now = new Date().toISOString();
-
-  // Désactive les autres plans
-  const active = await getActiveTrainingPlan();
-  if (active && active.id !== data.id) {
-    await db.training_plans.update(active.id, { is_active: false });
-  }
-
-  if (data.id) {
-    await db.training_plans.update(data.id, {
-      nom: data.nom,
-      course_freq: data.course_freq,
-      muscu_freq: data.muscu_freq,
-      start_date: data.start_date,
-      objectif_course: data.objectif_course,
-      objectif_muscu: data.objectif_muscu,
-      is_active: true,
-    });
-    return data.id;
-  } else {
-    const id = await db.training_plans.add({
-      nom: data.nom || 'Mon programme',
-      course_freq: data.course_freq || 0,
-      muscu_freq: data.muscu_freq || 0,
-      start_date: data.start_date || todayISO(),
-      objectif_course: data.objectif_course || null,
-      objectif_muscu: data.objectif_muscu || null,
-      is_active: true,
-      created_at: now,
-    });
-    triggerSync();
-    return id;
-  }
-}
-
-/**
- * Désactive le plan actif (sans le supprimer).
- */
-export async function deactivateTrainingPlan(planId) {
-  await db.training_plans.update(Number(planId), { is_active: false });
-  triggerSync();
-}
-
-/**
- * Récupère les séances d'une date (tri par heure de création).
- */
-export async function getSessionsForDate(date) {
-  return await db.training_sessions.where('date').equals(date).sortBy('created_at');
-}
-
-/**
- * Récupère les séances sur une plage [startIso, endIso] inclusive.
- */
-export async function getSessionsRange(startIso, endIso) {
-  return await db.training_sessions
-    .where('date').between(startIso, endIso, true, true)
-    .sortBy('date');
-}
-
-/**
- * Ajoute une ou plusieurs séances.
- */
-export async function addTrainingSessions(sessions) {
-  const now = new Date().toISOString();
-  const withMeta = sessions.map(s => ({
-    ...s,
-    created_at: now,
-  }));
-  return await db.training_sessions.bulkAdd(withMeta);
-}
-
-/**
- * Met à jour une séance (notes, completed, duree réelle, etc.).
- */
-export async function updateSession(id, updates) {
-  await db.training_sessions.update(Number(id), updates);
-}
-
-/**
- * Marque une séance comme complétée ou non.
- */
-export async function toggleSessionCompleted(id) {
-  const session = await db.training_sessions.get(Number(id));
-  if (!session) return;
-  await db.training_sessions.update(Number(id), {
-    completed: !session.completed,
-    completed_at: session.completed ? null : new Date().toISOString(),
-  });
-}
-
-/**
- * Supprime une séance.
- */
-export async function deleteSession(id) {
-  const session = await db.training_sessions.get(Number(id));
-  await enqueueDeletion('training_sessions', session);
-  await db.training_sessions.delete(Number(id));
-  triggerSync();
-}
-
-/**
- * Remplace le planning d'une semaine : supprime les sessions existantes non-completées
- * de la semaine et insère les nouvelles. Préserve les sessions déjà complétées.
- */
-export async function regenerateWeekSessions(startIso, endIso, newSessions) {
-  const existing = await db.training_sessions
-    .where('date').between(startIso, endIso, true, true)
-    .toArray();
-
-  // Supprimer les non-completées (qu'on va régénérer)
-  for (const s of existing) {
-    if (!s.completed) {
-      await enqueueDeletion('training_sessions', s);
-      await db.training_sessions.delete(s.id);
-    }
-  }
-
-  // Ajouter les nouvelles
-  if (newSessions && newSessions.length > 0) {
-    await addTrainingSessions(newSessions);
-  }
-  triggerSync();
 }
 
 // ==========================================================================
@@ -1065,11 +758,6 @@ export async function resetAll() {
   await db.pesees.clear();
   await db.repasTypes.clear();
   await db.repasTypeItems.clear();
-  await db.pending_deletions.clear();
-  await db.sync_state.clear();
-  await db.training_plans.clear();
-  await db.training_sessions.clear();
-  await db.strava_activities.clear();
   localStorage.removeItem('jamra_foods_imported_version');
 }
 

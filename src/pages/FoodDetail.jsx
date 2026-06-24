@@ -3,7 +3,6 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getFood, addMealEntry, toggleFavorite, todayISO } from '../db/database';
 import { CATEGORY_ICONS } from '../db/foodsDataset';
 import { formatNumber } from '../utils/format';
-import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
 import Button from '../components/ui/Button';
 
@@ -35,7 +34,6 @@ export default function FoodDetail() {
   const [searchParams] = useSearchParams();
   const meal = searchParams.get('meal') || 'collation';
   const date = searchParams.get('date') || todayISO();
-  const { user } = useAuth();
 
   const [food, setFood] = useState(null);
   const [quantity, setQuantity] = useState(100);
@@ -64,13 +62,6 @@ export default function FoodDetail() {
   const factor = quantity / 100;
   const calc = (v) => v != null ? Math.round(v * factor * 10) / 10 : null;
   const calcInt = (v) => v != null ? Math.round(v * factor) : null;
-
-  // L'aliment m'appartient si :
-  //  - pas encore sync (owner_profile_id null) ET source != ciqual
-  //  - OU owner_profile_id correspond à mon user.id
-  const isMine =
-    food.source !== 'ciqual' &&
-    (!food.owner_profile_id || food.owner_profile_id === user?.id);
 
   const kcal = calcInt(food.kcal_100g);
   const proteines = calc(food.proteines_100g);
@@ -129,19 +120,11 @@ export default function FoodDetail() {
           <div className="font-mono text-[10px] text-text-tertiary tracking-[0.2em] uppercase mt-2">
             {food.source === 'ciqual' ? 'CIQUAL' : food.source === 'perso' ? 'Perso' : food.source === 'openfoodfacts' ? 'OFF' : food.source} · {food.categorie}
           </div>
-          {food.is_shared && (
-            <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-[rgba(255,170,51,0.1)] border border-heat-amber/40">
-              <span className="text-xs">🏠</span>
-              <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-heat-amber">
-                {isMine ? 'Partagé avec le foyer' : 'Partagé par un membre'}
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Quantity input */}
-        <div className="mx-6 mb-5 p-6 surface-card rounded-2xl text-center animate-fade-up">
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3 font-bold">
+        <div className="mx-6 mb-5 p-6 bg-bg-surface1 border border-subtle rounded-2xl text-center">
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3">
             Quantité
           </div>
           <div className="flex items-baseline justify-center gap-2 mb-4">
@@ -150,11 +133,10 @@ export default function FoodDetail() {
               inputMode="decimal"
               value={inputValue}
               onChange={e => handleInputChange(e.target.value)}
-              className="w-32 bg-transparent border-none outline-none text-center font-display font-extrabold text-6xl leading-none text-heat-gradient tabular"
+              className="w-32 bg-transparent border-none outline-none text-center font-display font-extrabold text-6xl leading-none tracking-tight text-heat-gradient"
               style={{
                 WebkitAppearance: 'none',
                 MozAppearance: 'textfield',
-                letterSpacing: '-0.03em',
               }}
               min="0"
               step="5"
@@ -170,31 +152,26 @@ export default function FoodDetail() {
 
         {/* Quick buttons */}
         <div className="px-6 mb-6">
-          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-2 font-bold">
+          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-text-tertiary mb-2">
             Raccourcis
           </div>
           <div className="grid grid-cols-3 gap-2">
-            {QUICK_QUANTITIES.map(q => {
-              const selected = quantity === q;
-              return (
-                <button
-                  key={q}
-                  onClick={() => handleQuickQty(q)}
-                  className="py-3 rounded-xl font-mono text-sm font-semibold press-down transition-all tabular"
-                  style={{
-                    background: selected
-                      ? 'linear-gradient(135deg, rgba(255,170,51,0.15), rgba(255,23,68,0.15))'
-                      : 'rgba(255, 255, 255, 0.04)',
-                    border: selected
-                      ? '0.5px solid #FF4D00'
-                      : '0.5px solid rgba(255, 255, 255, 0.1)',
-                    color: selected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
-                  }}
-                >
-                  {q} g
-                </button>
-              );
-            })}
+            {QUICK_QUANTITIES.map(q => (
+              <button
+                key={q}
+                onClick={() => handleQuickQty(q)}
+                className={`
+                  py-3 rounded-xl border font-mono text-sm font-semibold
+                  transition-all duration-200 ease-out-quart
+                  ${quantity === q
+                    ? 'border-heat-orange text-text-primary bg-gradient-to-br from-[rgba(255,170,51,0.15)] to-[rgba(255,23,68,0.15)]'
+                    : 'border-subtle bg-bg-surface1 text-text-secondary hover:border-strong'
+                  }
+                `}
+              >
+                {q} g
+              </button>
+            ))}
           </div>
         </div>
 
@@ -230,8 +207,8 @@ export default function FoodDetail() {
           </button>
         </div>
 
-        {/* Éditer aliment perso (uniquement si c'est le mien) */}
-        {food.source === 'perso' && isMine && (
+        {/* Éditer aliment perso */}
+        {food.source === 'perso' && (
           <div className="px-6 mb-4">
             <button
               onClick={() => {

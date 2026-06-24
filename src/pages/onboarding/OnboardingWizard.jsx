@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveProfile } from '../../db/database';
+import { supabase } from '../../lib/supabase';
+import { computePhase } from '../../utils/calculations';
 import StepWelcome from './StepWelcome';
 import StepPersonal from './StepPersonal';
 import StepCurrent from './StepCurrent';
+import StepFitness from './StepFitness';
 import StepGoal from './StepGoal';
 import StepRecap from './StepRecap';
-
-/**
- * OnboardingWizard — orchestre les 5 étapes, agrège les données, sauvegarde en fin
- */
 
 export default function OnboardingWizard() {
   const navigate = useNavigate();
@@ -25,46 +24,47 @@ export default function OnboardingWizard() {
 
   const handleFinish = async () => {
     await saveProfile(data);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const phase = computePhase(data.poids_initial_kg);
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        poids_initial_kg: data.poids_initial_kg,
+        poids_actuel_kg: data.poids_initial_kg,
+        poids_cible_kg: data.poids_cible_kg,
+        mg_depart_pct: data.mg_depart_pct ?? null,
+        objectif_fitness: data.objectif_fitness ?? null,
+        objectif_marathon: data.objectif_marathon ?? null,
+        date_debut: data.date_debut ?? new Date().toISOString().slice(0, 10),
+        phase_actuelle: phase,
+        xp: 0,
+        strava_connected: false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
     navigate('/', { replace: true });
   };
 
-  // Progress indicator (barre de haut)
-  const totalSteps = 4; // étapes 1-4 (StepWelcome est le 0, affichage: étape 0/4 = start)
+  const totalSteps = 5;
   const progress = step === 0 ? 0 : step / totalSteps;
 
   return (
     <div className="min-h-dvh flex flex-col">
-      {/* Progress bar v2 avec step indicator */}
       {step > 0 && (
-        <div className="safe-pt px-6 pt-4 pb-2 animate-fade-up">
-          <div className="flex items-center justify-between mb-2">
-            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-heat-amber font-bold">
-              Étape {step} / {totalSteps}
-            </div>
-            <div className="font-mono text-[10px] tracking-wider uppercase text-text-tertiary tabular">
-              {Math.round(progress * 100)}%
-            </div>
-          </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255, 255, 255, 0.06)' }}>
-            <div
-              className="h-full rounded-full transition-all duration-500 ease-out-quart"
-              style={{
-                width: `${progress * 100}%`,
-                background: 'linear-gradient(90deg, #FFAA33 0%, #FF4D00 50%, #FF1744 100%)',
-                boxShadow: '0 0 8px rgba(255, 77, 0, 0.5)',
-              }}
-            />
-          </div>
+        <div className="h-1 bg-bg-surface2 safe-pt">
+          <div
+            className="h-full bg-heat-gradient transition-all duration-500 ease-out-quart"
+            style={{ width: `${progress * 100}%` }}
+          />
         </div>
       )}
 
-      <div className="flex-1 flex flex-col animate-fade-up" key={step}>
-        {step === 0 && <StepWelcome onNext={() => handleNext()} />}
-        {step === 1 && <StepPersonal data={data} onNext={handleNext} onBack={handleBack} />}
-        {step === 2 && <StepCurrent data={data} onNext={handleNext} onBack={handleBack} />}
-        {step === 3 && <StepGoal data={data} onNext={handleNext} onBack={handleBack} />}
-        {step === 4 && <StepRecap data={data} onFinish={handleFinish} onBack={handleBack} />}
-      </div>
+      {step === 0 && <StepWelcome onNext={() => handleNext()} />}
+      {step === 1 && <StepPersonal data={data} onNext={handleNext} onBack={handleBack} />}
+      {step === 2 && <StepCurrent  data={data} onNext={handleNext} onBack={handleBack} />}
+      {step === 3 && <StepFitness  data={data} onNext={handleNext} onBack={handleBack} />}
+      {step === 4 && <StepGoal     data={data} onNext={handleNext} onBack={handleBack} />}
+      {step === 5 && <StepRecap    data={data} onFinish={handleFinish} onBack={handleBack} />}
     </div>
   );
 }

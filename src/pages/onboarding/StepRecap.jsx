@@ -32,19 +32,22 @@ export default function StepRecap({ data, onFinish, onBack }) {
   if (!metrics) return null;
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col animate-fade-in">
       <div className="flex-1 px-6 py-4 overflow-y-auto">
-        <h2 className="font-display font-semibold text-3xl mb-2 leading-[1.05] text-text-primary" style={{ letterSpacing: '-0.02em' }}>
+        <div className="font-mono text-[11px] tracking-[0.3em] uppercase text-heat-orange mb-2">
+          Étape 4 / 4 · Récap
+        </div>
+        <h2 className="font-display font-black text-3xl mb-2 leading-none">
           Ton calibrage
         </h2>
-        <p className="text-text-secondary text-[14px] mb-8 leading-relaxed">
+        <p className="text-text-secondary text-sm mb-8">
           Voici ce que Jamra calcule pour toi. Tout reste ajustable plus tard.
         </p>
 
-        <div className="flex flex-col gap-3 stagger-1">
+        <div className="flex flex-col gap-4">
 
           {/* Profil */}
-          <div className="surface-card rounded-2xl p-5 animate-fade-up">
+          <div className="bg-bg-surface1 border border-subtle rounded-2xl p-5">
             <div className="font-display font-bold text-xs uppercase tracking-[0.12em] text-text-tertiary mb-3">
               Profil
             </div>
@@ -56,7 +59,7 @@ export default function StepRecap({ data, onFinish, onBack }) {
           </div>
 
           {/* Énergie */}
-          <div className="surface-card rounded-2xl p-5 animate-fade-up">
+          <div className="bg-bg-surface1 border border-subtle rounded-2xl p-5">
             <div className="font-display font-bold text-xs uppercase tracking-[0.12em] text-text-tertiary mb-3">
               Énergie
             </div>
@@ -71,7 +74,7 @@ export default function StepRecap({ data, onFinish, onBack }) {
           </div>
 
           {/* Macros */}
-          <div className="surface-card rounded-2xl p-5 animate-fade-up">
+          <div className="bg-bg-surface1 border border-subtle rounded-2xl p-5">
             <div className="font-display font-bold text-xs uppercase tracking-[0.12em] text-text-tertiary mb-3">
               Macros cible / jour
             </div>

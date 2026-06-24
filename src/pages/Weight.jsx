@@ -17,9 +17,7 @@ import Button from '../components/ui/Button';
 import WeightLineChart from '../components/charts/WeightLineChart';
 import WeightProjection from '../components/trends/WeightProjection';
 
-import AnimatedCounter from '../components/ui/AnimatedCounter';
-
-function Stat({ label, value, unit, tone = 'default', animate = false }) {
+function Stat({ label, value, unit, tone = 'default' }) {
   const toneClass =
     tone === 'danger' ? 'text-danger' :
     tone === 'success' ? 'text-success' :
@@ -27,15 +25,11 @@ function Stat({ label, value, unit, tone = 'default', animate = false }) {
     'text-text-primary';
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`font-display font-bold text-xl leading-none tabular ${toneClass}`} style={{ letterSpacing: '-0.02em' }}>
-        {animate && typeof value === 'number' ? (
-          <AnimatedCounter value={value} decimals={1} />
-        ) : (
-          value
-        )}
-        {unit && <span className="font-mono text-xs text-text-tertiary ml-1">{unit}</span>}
+      <div className={`font-display font-bold text-xl ${toneClass}`}>
+        {value}
+        {unit && <span className="font-mono text-sm text-text-tertiary ml-1">{unit}</span>}
       </div>
-      <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary mt-1.5">
+      <div className="font-mono text-[9px] tracking-[0.15em] uppercase text-text-tertiary">
         {label}
       </div>
     </div>
@@ -177,63 +171,56 @@ export default function Weight() {
       <Header variant="greeting" eyebrow="SUIVI" title="Mon poids" />
 
       {/* Saisie rapide */}
-      <div className="px-6 pb-5 animate-fade-up">
-        <div className="p-5 surface-card rounded-2xl">
+      <div className="px-6 pb-5">
+        <div className="p-6 bg-bg-surface1 border border-subtle rounded-2xl">
           {/* Toggle Aujourd'hui / Autre date */}
-          <div className="grid grid-cols-2 gap-1 p-1 rounded-lg mb-4" style={{ background: 'rgba(255,255,255,0.04)' }}>
+          <div className="grid grid-cols-2 gap-1 p-1 bg-bg-surface2 rounded-lg mb-4">
             <button
               onClick={() => { setDateMode('today'); setSelectedDate(today); }}
               className={`
-                py-2 px-3 rounded-md text-xs font-display font-bold uppercase tracking-[0.08em] transition-all press-down
+                py-1.5 px-3 rounded text-xs font-display font-bold uppercase tracking-[0.08em] transition-all
                 ${dateMode === 'today'
-                  ? 'text-white shadow-sm'
+                  ? 'bg-gradient-to-br from-heat-amber to-heat-orange text-white'
                   : 'text-text-tertiary hover:text-text-primary'
                 }
               `}
-              style={{
-                background: dateMode === 'today' ? 'linear-gradient(135deg, #FFAA33 0%, #FF4D00 100%)' : 'transparent',
-              }}
             >
               Aujourd'hui
             </button>
             <button
               onClick={() => setDateMode('other')}
               className={`
-                py-2 px-3 rounded-md text-xs font-display font-bold uppercase tracking-[0.08em] transition-all press-down
+                py-1.5 px-3 rounded text-xs font-display font-bold uppercase tracking-[0.08em] transition-all
                 ${dateMode === 'other'
-                  ? 'text-white shadow-sm'
+                  ? 'bg-gradient-to-br from-heat-amber to-heat-orange text-white'
                   : 'text-text-tertiary hover:text-text-primary'
                 }
               `}
-              style={{
-                background: dateMode === 'other' ? 'linear-gradient(135deg, #FFAA33 0%, #FF4D00 100%)' : 'transparent',
-              }}
             >
               Autre date
             </button>
           </div>
 
           {dateMode === 'other' && (
-            <div className="mb-3 animate-fade-in">
+            <div className="mb-3">
               <input
                 type="date"
                 value={selectedDate}
                 max={today}
                 min="2020-01-01"
                 onChange={e => setSelectedDate(e.target.value)}
-                className="w-full px-4 py-2.5 border border-subtle rounded-xl font-mono text-sm text-text-primary focus:outline-none focus:border-heat-orange [color-scheme:dark]"
-                style={{ background: 'rgba(255,255,255,0.04)' }}
+                className="w-full px-4 py-2.5 bg-bg-surface2 border border-subtle rounded-xl font-mono text-sm text-text-primary focus:outline-none focus:border-heat-orange [color-scheme:dark]"
               />
             </div>
           )}
 
-          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3 text-center font-bold">
+          <div className="font-mono text-[10px] tracking-[0.2em] uppercase text-text-tertiary mb-3 text-center">
             {selectedWeight
               ? (isSelectedToday ? 'Modifier la pesée du jour' : 'Modifier cette pesée')
               : (isSelectedToday ? 'Je me pèse aujourd\'hui' : 'Ajouter une pesée')
             }
           </div>
-          <div className="flex items-baseline justify-center gap-2 mb-5">
+          <div className="flex items-baseline justify-center gap-2 mb-4">
             <input
               type="number"
               inputMode="decimal"
@@ -243,10 +230,9 @@ export default function Weight() {
               step="0.1"
               min="20"
               max="300"
-              className="w-44 bg-transparent border-none outline-none text-center font-display font-extrabold text-6xl leading-none text-heat-gradient tabular"
-              style={{ letterSpacing: '-0.03em' }}
+              className="w-40 bg-transparent border-none outline-none text-center font-display font-extrabold text-6xl leading-none tracking-tight text-heat-gradient"
             />
-            <span className="font-display font-bold text-xl text-text-secondary">kg</span>
+            <span className="font-display font-bold text-2xl text-text-secondary">kg</span>
           </div>
           <Button
             fullWidth
@@ -265,8 +251,8 @@ export default function Weight() {
       </div>
 
       {/* Stats */}
-      <div className="px-6 pb-5 animate-fade-up" style={{ animationDelay: '80ms', animationFillMode: 'backwards' }}>
-        <div className="grid grid-cols-4 gap-3 p-5 surface-card rounded-2xl">
+      <div className="px-6 pb-5">
+        <div className="grid grid-cols-4 gap-3 p-5 bg-bg-surface1 border border-subtle rounded-2xl">
           <Stat
             label="Actuel"
             value={currentWeight != null ? formatNumber(currentWeight, { decimals: 1 }) : '—'}

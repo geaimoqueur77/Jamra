@@ -9,19 +9,15 @@ import Home from './pages/Home';
 import Journal from './pages/Journal';
 import Weight from './pages/Weight';
 import Profile from './pages/Profile';
+import Sport from './pages/Sport';
+import Corps from './pages/Corps';
 import Add from './pages/Add';
 import FoodDetail from './pages/FoodDetail';
 import EditEntry from './pages/EditEntry';
 import BarcodeScanner from './pages/BarcodeScanner';
 import CreateCustomFood from './pages/CreateCustomFood';
 import CopyMeal from './pages/CopyMeal';
-import Workspace from './pages/Workspace';
-import Training from './pages/Training';
-import TrainingPlanEditor from './pages/TrainingPlanEditor';
-import SessionDetail from './pages/SessionDetail';
-import StravaPage from './pages/Strava';
-import StravaCallback from './pages/auth/StravaCallback';
-import Metrics from './pages/Metrics';
+import StravaCallback from './pages/strava/StravaCallback';
 
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -99,26 +95,21 @@ export const router = createBrowserRouter([
             element: <AppShell />,
             children: [
               { path: '/', element: <Home /> },
-              { path: '/journal', element: <Journal /> },
-              { path: '/poids', element: <Weight /> },
+              { path: '/sport', element: <Sport /> },
+              { path: '/corps', element: <Corps /> },
               { path: '/profil', element: <Profile /> },
             ],
           },
           // Routes full-screen (sans AppShell)
+          { path: '/journal', element: <Journal /> },
+          { path: '/poids', element: <Weight /> },
           { path: '/ajout', element: <Add /> },
           { path: '/aliment/:id', element: <FoodDetail /> },
           { path: '/edit/:id', element: <EditEntry /> },
           { path: '/scanner', element: <BarcodeScanner /> },
           { path: '/creer-aliment', element: <CreateCustomFood /> },
           { path: '/copier-repas', element: <CopyMeal /> },
-          { path: '/foyer', element: <Workspace /> },
-          // Training (Phase 5.B)
-          { path: '/entrainement', element: <Training /> },
-          { path: '/entrainement/config', element: <TrainingPlanEditor /> },
-          { path: '/entrainement/seance/:id', element: <SessionDetail /> },
-          { path: '/strava', element: <StravaPage /> },
-          { path: '/strava-callback', element: <StravaCallback /> },
-          { path: '/metriques', element: <Metrics /> },
+          { path: '/strava/callback', element: <StravaCallback /> },
         ],
       },
     ],

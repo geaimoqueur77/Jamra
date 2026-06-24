@@ -60,6 +60,7 @@ export default function StepGoal({ data, onNext, onBack }) {
   const [objectif, setObjectif] = useState(data.objectif || '');
   const [poidsCible, setPoidsCible] = useState(data.poids_cible_kg || '');
   const [scenario, setScenario] = useState(data.scenario || '');
+  const [marathon, setMarathon] = useState(data.objectif_marathon || '');
 
   const needsScenario = objectif === 'perte_poids';
   const isValid = objectif && (needsScenario ? poidsCible && scenario : true);
@@ -83,20 +84,24 @@ export default function StepGoal({ data, onNext, onBack }) {
       scenario: needsScenario ? scenario : 'entretien',
       date_debut_objectif: now,
       date_cible: projectedDate ? projectedDate.toISOString().slice(0, 10) : null,
+      objectif_marathon: marathon || null,
     });
   };
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col animate-fade-in">
       <div className="flex-1 px-6 py-4 overflow-y-auto">
-        <h2 className="font-display font-semibold text-3xl mb-2 leading-[1.05] text-text-primary" style={{ letterSpacing: '-0.02em' }}>
+        <div className="font-mono text-[11px] tracking-[0.3em] uppercase text-heat-orange mb-2">
+          Étape 4 / 5
+        </div>
+        <h2 className="font-display font-black text-3xl mb-2 leading-none">
           Quel objectif ?
         </h2>
-        <p className="text-text-secondary text-[14px] mb-8 leading-relaxed">
+        <p className="text-text-secondary text-sm mb-8">
           Tout se calibre à partir d'ici.
         </p>
 
-        <div className="flex flex-col gap-6 stagger-1">
+        <div className="flex flex-col gap-6">
           <div>
             <label className="font-body font-semibold text-sm text-text-primary mb-2 block">
               Objectif principal
@@ -166,6 +171,27 @@ export default function StepGoal({ data, onNext, onBack }) {
               )}
             </>
           )}
+          <div>
+            <label className="font-body font-semibold text-sm text-text-primary mb-1 block">
+              Date du marathon <span className="font-normal text-text-tertiary">(optionnel)</span>
+            </label>
+            <p className="font-mono text-[10px] text-text-tertiary mb-2 tracking-wide">
+              Si tu prépares une course longue, l'app adapte les recommandations.
+            </p>
+            <input
+              type="date"
+              value={marathon}
+              min={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setMarathon(e.target.value)}
+              className="w-full bg-bg-surface1 border border-subtle rounded-xl px-4 py-3 font-mono text-[13px] text-text-primary focus:border-heat-orange/60 focus:outline-none transition-colors"
+              style={{ colorScheme: 'dark' }}
+            />
+            {marathon && (
+              <div className="mt-2 font-mono text-[10px] text-heat-amber tracking-wide">
+                J-{Math.ceil((new Date(marathon) - new Date()) / 86400000)} jours
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -304,25 +304,20 @@ export default function Journal() {
     <div>
       <Header
         variant="greeting"
-        eyebrow="Journal"
+        eyebrow="JOURNAL"
         title="Historique"
         action={
           selectedIso !== today && (
-            <button
+            <IconButton
               onClick={() => { setSelectedIso(today); setWeekEndIso(today); }}
-              className="px-3 py-1.5 rounded-full flex items-center gap-1.5 press-down surface-card"
               aria-label="Aujourd'hui"
-              style={{ background: 'rgba(255,170,51,0.1)', border: '0.5px solid rgba(255,170,51,0.3)' }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFAA33" strokeWidth="2.5">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="12 6 12 12 16 14" />
               </svg>
-              <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-heat-amber font-bold">Aujourd'hui</span>
-            </button>
+            </IconButton>
           )
-        }
-      />
         }
       />
 
