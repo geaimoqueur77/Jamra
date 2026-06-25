@@ -100,6 +100,20 @@ export default function ExerciseProgressModal({ exerciseName, userId, onClose })
           )}
         </div>
 
+        {/* Points clés d'exécution */}
+        {meta?.cues_fr?.length > 0 && (
+          <div className="px-6 mb-4">
+            <div className="rounded-2xl bg-bg-surface1 border border-subtle p-4 space-y-2">
+              {meta.cues_fr.map((cue, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-heat-orange shrink-0 mt-1.5" />
+                  <span className="font-mono text-[12px] text-text-secondary leading-snug">{cue}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Record */}
         {allTime && (
           <div className="mx-6 mb-4 flex items-center gap-4 p-4 rounded-2xl bg-heat-orange/8 border border-heat-orange/20">

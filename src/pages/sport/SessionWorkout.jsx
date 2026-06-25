@@ -488,10 +488,45 @@ function ExerciseListView({ type, sessionSets, exerciseMeta, completedExercises,
   );
 }
 
+function InstructionsAccordion({ instructions }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-3 pt-3 border-t border-subtle">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between py-1"
+      >
+        <div className="flex items-center gap-1.5">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+            className={`text-heat-orange transition-transform duration-200 ${open ? 'rotate-90' : ''}`}>
+            <polyline points="9 6 15 12 9 18" />
+          </svg>
+          <span className="font-display font-bold text-[11px] uppercase tracking-[0.1em] text-heat-orange">Comment faire</span>
+        </div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          className={`text-text-tertiary transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div className="mt-3 flex flex-col gap-2 pb-1">
+          {instructions.map((step, i) => (
+            <div key={i} className="flex gap-3">
+              <span className="font-mono text-[10px] text-heat-orange w-4 shrink-0 mt-0.5">{i + 1}.</span>
+              <span className="font-body text-[13px] text-text-secondary leading-relaxed">{step}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Vue : exercice actif ─────────────────────────────────────────────────────
 
-function ActiveExerciseView({ exercise, sessionId, userId, prMap, lastSessionData, onBack, onSetSaved }) {
+function ActiveExerciseView({ exercise, sessionId, userId, prMap, lastSessionData, onBack, onSetSaved, exerciseMeta }) {
   const lastSets = lastSessionData[exercise.fr] || [];
+  const meta = exerciseMeta?.[exercise.fr];
 
   // Générer les sets initiaux : 3 rangées pré-remplies avec la dernière séance
   const makeInitialSets = () => [
@@ -554,8 +589,33 @@ function ActiveExerciseView({ exercise, sessionId, userId, prMap, lastSessionDat
 
   return (
     <div className="flex-1 overflow-y-auto pb-10">
-      {/* Header exercice */}
+      {/* Header exercice + démo */}
       <div className="px-6 pt-5 pb-5 border-b border-subtle">
+        {/* GIF animé */}
+        <div className="flex justify-center mb-4">
+          {meta?.gif_cached_url || meta?.gif_url ? (
+            <img
+              src={meta.gif_cached_url || meta.gif_url}
+              alt={exercise.fr}
+              className="rounded-2xl object-cover"
+              style={{ width: 240, maxHeight: 200 }}
+              loading="eager"
+            />
+          ) : (
+            <div
+              className="rounded-2xl bg-heat-orange/8 border border-heat-orange/15 flex flex-col items-center justify-center gap-2"
+              style={{ width: 240, height: 160 }}
+            >
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,77,0,0.35)" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M6 4v4M18 4v4M4 6h4M16 6h4M6 20v-4M18 20v-4M4 18h4M16 18h4" />
+                <rect x="8" y="11" width="8" height="2" rx="1" />
+              </svg>
+              <span className="font-mono text-[10px] uppercase tracking-wider text-heat-orange/40">{exercise.muscle}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Nom + muscle */}
         <div className="font-mono text-[10px] tracking-[0.3em] uppercase text-heat-orange mb-1">
           {exercise.muscle}
         </div>
@@ -563,7 +623,24 @@ function ActiveExerciseView({ exercise, sessionId, userId, prMap, lastSessionDat
           {exercise.fr}
         </div>
         {exercise.secondary && (
-          <div className="font-mono text-[10px] text-text-tertiary">{exercise.secondary}</div>
+          <div className="font-mono text-[10px] text-text-tertiary mb-2">{exercise.secondary}</div>
+        )}
+
+        {/* Points clés d'exécution — toujours visibles */}
+        {meta?.cues_fr?.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {meta.cues_fr.map((cue, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-heat-orange shrink-0 mt-1.5" />
+                <span className="font-mono text-[12px] text-text-secondary leading-snug">{cue}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Accordion instructions étape par étape */}
+        {meta?.instructions?.length > 0 && (
+          <InstructionsAccordion instructions={meta.instructions} />
         )}
       </div>
 
@@ -924,7 +1001,7 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
 
   // Charge les metadata exercices (GIFs etc.) depuis la table exercises
   useEffect(() => {
-    supabase.from('exercises').select('name_fr, gif_url, gif_cached_url, muscle_target').then(({ data }) => {
+    supabase.from('exercises').select('name_fr, gif_url, gif_cached_url, muscle_target, cues_fr, instructions').then(({ data }) => {
       if (!data) return;
       const map = {};
       data.forEach(e => { map[e.name_fr] = e; });
@@ -1132,6 +1209,7 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
           lastSessionData={lastSessionData}
           onBack={() => handleExerciseDone(activeExercise.fr)}
           onSetSaved={handleSetSaved}
+          exerciseMeta={exerciseMeta}
         />
       )}
 
