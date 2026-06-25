@@ -156,6 +156,10 @@ function drawFaceFeatures(g, cx, hcy, expr, SK) {
     P(g, ex - 3, browY + 1, B); P(g, ex - 2, browY, B); P(g, ex + 2, browY, B); P(g, ex + 3, browY + 1, B);
     P(g, ex - 1, my + 1, M); P(g, ex, my, M); P(g, ex + 1, my, M);
     P(g, ex + 4, browY + 1, PAL.gsc);
+  } else if (expr === 'wink') {
+    P(g, ex - 3, browY, B); P(g, ex - 2, browY, B);
+    P(g, ex + 2, browY + 1, B); P(g, ex + 3, browY, B);
+    P(g, ex - 2, my - 1, M); hspan(g, my, ex - 1, ex + 1, M); P(g, ex + 2, my - 1, M);
   } else {
     P(g, ex - 3, browY, B); P(g, ex - 2, browY, B); P(g, ex + 2, browY, B); P(g, ex + 3, browY, B);
     hspan(g, my, ex - 1, ex + 1, M);
@@ -177,6 +181,9 @@ function drawEyes(g, cx, hcy, expr, SK) {
   } else if (expr === 'coupable') {
     P(g, lx, eyeY, SK.sk0); P(g, rx, eyeY, SK.sk0);
     P(g, lx, eyeY + 1, E); P(g, rx, eyeY + 1, E);
+  } else if (expr === 'wink') {
+    P(g, lx, eyeY, E);
+    hspan(g, eyeY, rx - 1, rx + 1, SK.sk3);
   } else {
     P(g, lx, eyeY, E); P(g, rx, eyeY, E);
   }
@@ -564,6 +571,29 @@ function drawScene(ctx, scene, S, t) {
     [[18, 52], [48, 36], [83, 64], [126, 44], [163, 31], [202, 58], [246, 38], [284, 50], [32, 74], [72, 78], [306, 66], [8, 38], [258, 54], [140, 68]].forEach(([cx2, cy2], i) => { const dx = (t / 4 + i * 23) % 28 - 8, dy = (t / 3 + i * 17) % 28; ctx.fillStyle = ['#FF4D00', '#FFAA33', '#FFD166'][i % 3]; R(ctx, cx2 + dx, cy2 + dy, 2, 2, S); });
     for (let i = 0; i < 32; i++) { ctx.fillStyle = i % 2 ? '#f0e0c0' : '#0a0608'; R(ctx, i * 10, 148, 10, 4, S); }
     ctx.fillStyle = '#1a0c08'; R(ctx, 0, 152, 320, 28, S);
+  } else if (scene === 'sleep') {
+    ctx.fillStyle = '#030208'; ctx.fillRect(0, 0, W, H);
+    const ng = ctx.createLinearGradient(0, 0, 0, H * .65); ng.addColorStop(0, '#040215'); ng.addColorStop(1, '#070410'); ctx.fillStyle = ng; ctx.fillRect(0, 0, W, H * .65);
+    const pa = ctx.createRadialGradient(W * .5, H * .7, 0, W * .5, H * .7, W * .35); pa.addColorStop(0, 'rgba(80,60,120,.12)'); pa.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = pa; ctx.fillRect(0, 0, W, H);
+    [[88, 8], [130, 14], [165, 5], [210, 9], [250, 6], [290, 12], [305, 22], [40, 28], [75, 22]].forEach(([x, y]) => { ctx.fillStyle = 'rgba(255,255,245,.8)'; R(ctx, x, y, 1, 1, S); });
+    const mx = 52, mcy = 20; ctx.fillStyle = '#e8e0c0';
+    [[1,0],[2,0],[3,0],[0,1],[4,1],[0,2],[4,2],[0,3],[4,3],[1,4],[2,4],[3,4]].forEach(([dx, dy]) => R(ctx, mx + dx * 3, mcy + dy * 3, 3, 3, S));
+    ctx.fillStyle = '#c0c8d8'; R(ctx, mx + 6, mcy + 3, 3, 3, S);
+    const zzPhase = (t * .0008) % 1;
+    ['Z', 'Z', 'z'].forEach((letter, i) => {
+      const zy = 28 + i * 10 - zzPhase * 30;
+      if (zy < -5 || zy > 70) return;
+      const alpha = Math.max(0, 0.9 - i * 0.2) * (1 - zzPhase * .5);
+      ctx.font = `bold ${(14 - i * 2) * S}px monospace`; ctx.fillStyle = `rgba(180,170,220,${alpha})`; ctx.fillText(letter, (178 + i * 8) * S, zy * S);
+    });
+    ctx.fillStyle = '#060412'; R(ctx, 0, 148, 320, 32, S); ctx.fillStyle = '#100c20'; R(ctx, 0, 148, 320, 2, S);
+  } else if (scene === 'morning') {
+    const mg = ctx.createLinearGradient(0, 0, 0, H); mg.addColorStop(0, '#080510'); mg.addColorStop(.5, '#1a0b0a'); mg.addColorStop(.8, '#3a1508'); mg.addColorStop(1, '#5a2208'); ctx.fillStyle = mg; ctx.fillRect(0, 0, W, H);
+    const sg = ctx.createRadialGradient(W * .5, H * .62, 0, W * .5, H * .62, W * .4); sg.addColorStop(0, 'rgba(255,150,50,.35)'); sg.addColorStop(.4, 'rgba(255,80,20,.15)'); sg.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = sg; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#FFAA33'; ctx.beginPath(); ctx.arc(W * .5, H * .62, 22 * S, Math.PI, 0, false); ctx.fill();
+    ctx.fillStyle = '#FFD060'; ctx.beginPath(); ctx.arc(W * .5, H * .62, 14 * S, Math.PI, 0, false); ctx.fill();
+    ctx.fillStyle = '#3a1808'; R(ctx, 0, 112, 320, 3, S);
+    ctx.fillStyle = '#1a0c08'; R(ctx, 0, 115, 320, 65, S); ctx.fillStyle = '#251008'; R(ctx, 0, 115, 320, 3, S);
   } else {
     ctx.fillStyle = '#060407'; ctx.fillRect(0, 0, W, H);
     const ag = ctx.createRadialGradient(0, 0, 0, 0, 0, H * .65); ag.addColorStop(0, 'rgba(40,30,60,.14)'); ag.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = ag; ctx.fillRect(0, 0, W, H);
@@ -585,13 +615,14 @@ function rack(ctx, x, y, S) {
 // ─────────────────────────────────────────────
 //  React component
 // ─────────────────────────────────────────────
-const SCENE_TO_POSE = { gym: 'lift', route: 'run', repos: 'sit', jalon: 'celebrate', absent: 'slump' };
+const SCENE_TO_POSE = { gym: 'lift', route: 'run', repos: 'sit', jalon: 'celebrate', absent: 'slump', sleep: 'sit', morning: 'idle', tired: 'idle' };
 
 export default function JamraAvatar({ bodyState = 1, expression = 'neutral', scene = 'gym', weight, bf, customization = {} }) {
   const heroRef = useRef(null);
   const offRef = useRef(null);
   const rafRef = useRef(null);
   const t0Ref = useRef(null);
+  const tapRef = useRef({ active: false, type: null, startT: 0, cooldown: false });
 
   useEffect(() => {
     const off = document.createElement('canvas');
@@ -602,10 +633,25 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
     const loop = (t) => {
       const fr = Math.floor((t - t0Ref.current) / 240) % 4;
       const garminGlow = scene === 'route' && (Math.floor(t / 420) % 2 === 0);
-      const pose = SCENE_TO_POSE[scene] || 'idle';
-      const hopDY = pose === 'celebrate' ? [-2, -3, -3, -2][fr] : 0;
+      let pose = SCENE_TO_POSE[scene] || 'idle';
+      let hopDY = pose === 'celebrate' ? [-2, -3, -3, -2][fr] : 0;
+      let effectiveExpr = expression;
 
-      const g = buildGrid(bodyState, fr, expression, garminGlow, pose, customization);
+      const tap = tapRef.current;
+      if (tap.active) {
+        const tapElapsed = t - tap.startT;
+        if (tapElapsed > 600) {
+          tap.active = false; tap.cooldown = true;
+          setTimeout(() => { tap.cooldown = false; }, 900);
+        } else {
+          const tapFr = Math.min(3, Math.floor(tapElapsed / 150));
+          if (tap.type === 'wink') effectiveExpr = 'wink';
+          else if (tap.type === 'jump') hopDY += [0, -5, -10, -5][tapFr];
+          else if (tap.type === 'wave') pose = 'celebrate';
+        }
+      }
+
+      const g = buildGrid(bodyState, fr, effectiveExpr, garminGlow, pose, customization);
       const offCtx = off.getContext('2d');
       offCtx.clearRect(0, 0, 32, 64);
       for (let y = 0; y < 64; y++) for (let x = 0; x < 32; x++) {
@@ -640,6 +686,15 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
   const stateLabels = ['Départ', 'Phase 1', 'Phase 2', 'Objectif'];
   const bfValues = ['~30', '~18', '~14', '~12'];
 
+  const handleTap = () => {
+    const tap = tapRef.current;
+    if (tap.active || tap.cooldown) return;
+    const types = ['wave', 'wink', 'jump'];
+    tap.type = types[Math.floor(Math.random() * 3)];
+    tap.startT = performance.now();
+    tap.active = true;
+  };
+
   const idleStyle = { animation: 'jmrBreath 4s ease-in-out infinite' };
   const canvasStyle = {
     display: 'block', width: '100%', height: 'auto',
@@ -648,12 +703,12 @@ export default function JamraAvatar({ bodyState = 1, expression = 'neutral', sce
   };
 
   return (
-    <div className="relative rounded-[18px] overflow-hidden border border-subtle" style={{ background: '#070405', ...idleStyle }}>
+    <div className="relative rounded-[18px] overflow-hidden border border-subtle cursor-pointer" style={{ background: '#070405', ...idleStyle }} onClick={handleTap}>
       <canvas ref={heroRef} width={640} height={360} style={canvasStyle} />
       <div className="absolute top-2.5 left-3 flex items-center gap-1.5 px-2 py-1 rounded-lg" style={{ background: 'rgba(7,4,5,.55)', backdropFilter: 'blur(2px)' }}>
         <div className="w-1.5 h-1.5 rounded-full bg-heat-orange" style={{ boxShadow: '0 0 8px #FF4D00', animation: 'jmrPulse 1.6s infinite' }} />
         <span className="font-mono text-[8px] text-[#ffe0c2] tracking-[0.5px]">
-          {({ gym: 'SALLE', route: 'ROUTE', repos: 'RÉCUP', jalon: 'OBJECTIF ✓', absent: 'INACTIF' })[scene] || scene.toUpperCase()}
+          {({ gym: 'SALLE', route: 'ROUTE', repos: 'RÉCUP', jalon: 'OBJECTIF ✓', absent: 'INACTIF', sleep: 'SOMMEIL', morning: 'MATIN', tired: 'FATIGUÉ' })[scene] || scene.toUpperCase()}
         </span>
       </div>
       <div className="absolute left-0 right-0 bottom-0 flex items-end justify-between px-3.5 pb-2.5 pt-5"

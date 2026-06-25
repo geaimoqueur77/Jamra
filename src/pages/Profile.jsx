@@ -12,6 +12,10 @@ import Header from '../components/layout/Header';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Wordmark from '../components/ui/Wordmark';
+import { generateAthleteCard } from '../utils/shareWeekly';
+import { useAvatarState } from '../hooks/useAvatarState';
+import { useAvatarCustomization } from '../hooks/useAvatarCustomization';
+import { getLatestWeight } from '../db/database';
 
 /**
  * Profile — affichage du profil et paramètres
@@ -237,11 +241,15 @@ function usePushNotifications(userId) {
 export default function Profile() {
   const navigate = useNavigate();
   const profile = useLiveQuery(getProfile);
+  const latestWeight = useLiveQuery(getLatestWeight);
   const { user, signOut } = useAuth();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [generatingCard, setGeneratingCard] = useState(false);
   const { checkMarathonSigned, recentUnlocks } = useAchievements();
   const push = usePushNotifications(user?.id);
+  const avatarState = useAvatarState();
+  const { customization: avatarCustomization } = useAvatarCustomization();
 
   if (!profile) return null;
 
@@ -251,6 +259,33 @@ export default function Profile() {
   const handleReset = async () => {
     await resetAll();
     navigate('/onboarding', { replace: true });
+  };
+
+  const handleDownloadCard = async () => {
+    setGeneratingCard(true);
+    try {
+      const achievements = user ? await getUserAchievements(user.id) : [];
+      const currentWeight = latestWeight?.poids_kg || profile?.poids_initial_kg;
+      let phase = 1;
+      if (currentWeight < 85) phase = 4;
+      else if (currentWeight < 89) phase = 3;
+      else if (currentWeight < 93) phase = 2;
+      const userData = {
+        nom: profile?.prenom || 'Athlète',
+        poids: currentWeight,
+        poids_cible: profile?.poids_cible_kg,
+        phase,
+        xp: 0,
+      };
+      const dataURL = await generateAthleteCard(userData, avatarState, avatarCustomization, achievements);
+      const a = document.createElement('a');
+      a.href = dataURL;
+      a.download = 'jamra-carte-athlete.png';
+      a.click();
+    } catch (e) {
+      console.error(e);
+    }
+    setGeneratingCard(false);
   };
 
   const handleLogout = async () => {
@@ -338,6 +373,26 @@ export default function Profile() {
             </div>
           </div>
           <div className="font-mono text-text-muted text-[11px] group-hover:text-heat-orange transition-colors">→</div>
+        </button>
+
+        {/* Carte athlète */}
+        <button
+          onClick={handleDownloadCard}
+          disabled={generatingCard}
+          className="w-full flex items-center justify-between py-3.5 px-4 rounded-2xl border border-subtle bg-bg-surface1 hover:border-heat-amber/40 transition-colors group disabled:opacity-50"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-heat-amber/10 flex items-center justify-center text-heat-amber text-sm">
+              🃏
+            </div>
+            <div className="text-left">
+              <div className="font-display font-bold text-[13px] text-text-primary">Ma carte athlète</div>
+              <div className="font-mono text-[9px] text-text-tertiary uppercase tracking-wider">
+                {generatingCard ? 'Génération...' : '1080×1350 · Télécharger'}
+              </div>
+            </div>
+          </div>
+          <div className="font-mono text-text-muted text-[11px] group-hover:text-heat-amber transition-colors">↓</div>
         </button>
 
         {/* Notifications push */}

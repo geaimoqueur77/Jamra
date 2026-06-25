@@ -21,6 +21,7 @@ import ProgressBar from '../components/ui/ProgressBar';
 import { InsightsRow } from '../components/insights/InsightCard';
 import FatBurnWidget from '../components/FatBurnWidget';
 import JamraAvatar from '../components/JamraAvatar';
+import MilestoneAnimation from '../components/MilestoneAnimation';
 import JamrMascot from '../components/avatar/JamrMascot';
 import { useAvatarState } from '../hooks/useAvatarState';
 import { useAvatarCustomization } from '../hooks/useAvatarCustomization';
@@ -719,7 +720,7 @@ export default function Home() {
   const [tonightWorkout, setTonightWorkout] = useState(null);
   const [avatarProud, setAvatarProud] = useState(false);
   const prevUnlocksLen = useRef(0);
-  const { recentUnlocks, checkAll, checkFirstSession, checkFirstPR } = useAchievements();
+  const { recentUnlocks, milestoneUnlocks, dismissMilestone, checkAll, checkFirstSession, checkFirstPR } = useAchievements();
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -819,9 +820,44 @@ export default function Home() {
               bf={avatarState.bf}
               customization={avatarCustomization}
             />
-            {/* Jamr mascot — coin bas gauche */}
+            {/* Jamr mascot — état piloté par formeScore */}
             <div className="absolute bottom-3 left-3" style={{ animation: 'jmrBounce 2s ease-in-out infinite' }}>
-              <JamrMascot state={avatarState.scene === 'absent' ? 'sad' : avatarProud ? 'happy' : 'idle'} size={32} />
+              <JamrMascot
+                state={
+                  avatarProud ? 'happy'
+                    : (avatarState.formeScore ?? 60) > 70 ? 'happy'
+                    : (avatarState.formeScore ?? 60) < 40 ? 'sad'
+                    : 'idle'
+                }
+                size={32}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FORME Tamagotchi bar */}
+      {!avatarState.loading && (
+        <div className="px-6 pt-1 pb-2">
+          <div className="flex items-center gap-3">
+            <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-muted w-12">FORME</div>
+            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: '#1a0e0c' }}>
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${avatarState.formeScore ?? 60}%`,
+                  background: (avatarState.formeScore ?? 60) < 40
+                    ? '#ef4444'
+                    : 'linear-gradient(90deg, #FF4D00, #FFAA33)',
+                  boxShadow: (avatarState.formeScore ?? 60) < 40
+                    ? '0 0 8px rgba(239,68,68,0.6)'
+                    : '0 0 6px rgba(255,77,0,0.35)',
+                  animation: (avatarState.formeScore ?? 60) < 40 ? 'jmrPulse 1.4s infinite' : 'none',
+                }}
+              />
+            </div>
+            <div className={`font-mono text-[10px] font-bold w-10 text-right ${(avatarState.formeScore ?? 60) < 40 ? 'text-danger' : 'text-heat-amber'}`}>
+              {avatarState.formeScore ?? 60}%
             </div>
           </div>
         </div>
@@ -932,6 +968,15 @@ export default function Home() {
       </div>
 
       <AchievementToastLayer unlocks={recentUnlocks} onDismiss={() => {}} />
+
+      {milestoneUnlocks.length > 0 && (
+        <MilestoneAnimation
+          milestone={milestoneUnlocks[0]}
+          avatarState={avatarState}
+          avatarCustomization={avatarCustomization}
+          onDismiss={() => dismissMilestone(milestoneUnlocks[0]._id)}
+        />
+      )}
 
       {tonightWorkout && (
         <SessionWorkout

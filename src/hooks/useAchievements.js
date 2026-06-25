@@ -33,15 +33,26 @@ async function checkAndUnlock(userId, achievementKey) {
   return ach;
 }
 
+const MAJOR_KEYS = new Set(['phase1_done', 'minus_5kg', 'marathon_signed']);
+
 export function useAchievements() {
   const [recentUnlocks, setRecentUnlocks] = useState([]);
+  const [milestoneUnlocks, setMilestoneUnlocks] = useState([]);
 
   const addUnlock = (ach) => {
-    const entry = { ...ach, _id: Date.now() };
-    setRecentUnlocks(prev => [...prev, entry]);
-    setTimeout(() => {
-      setRecentUnlocks(prev => prev.filter(u => u._id !== entry._id));
-    }, 4000);
+    if (MAJOR_KEYS.has(ach.key)) {
+      setMilestoneUnlocks(prev => [...prev, { ...ach, _id: Date.now() }]);
+    } else {
+      const entry = { ...ach, _id: Date.now() };
+      setRecentUnlocks(prev => [...prev, entry]);
+      setTimeout(() => {
+        setRecentUnlocks(prev => prev.filter(u => u._id !== entry._id));
+      }, 4000);
+    }
+  };
+
+  const dismissMilestone = (id) => {
+    setMilestoneUnlocks(prev => prev.filter(u => u._id !== id));
   };
 
   const checkFirstSession = useCallback(async (userId) => {
@@ -132,6 +143,8 @@ export function useAchievements() {
 
   return {
     recentUnlocks,
+    milestoneUnlocks,
+    dismissMilestone,
     checkFirstSession,
     checkFirstPR,
     checkMinus5kg,

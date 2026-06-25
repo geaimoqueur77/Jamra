@@ -5,6 +5,7 @@ import { useAvatarCustomization } from '../hooks/useAvatarCustomization';
 import { CUSTOMIZATION_OPTIONS } from '../components/JamraAvatar';
 import AvatarPreview from '../components/AvatarPreview';
 import Header from '../components/layout/Header';
+import { downloadStickerPack } from '../utils/shareWeekly';
 
 function OptionPill({ option, selected, unlocked, unlockLabel, onClick }) {
   return (
@@ -48,6 +49,7 @@ export default function AvatarCustomizer() {
   const { customization, setCustomization, isUnlocked, unlockLabel, save, loading } = useAvatarCustomization();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [downloadingStickers, setDownloadingStickers] = useState(false);
 
   const set = (key, id) => setCustomization(c => ({ ...c, [key]: id }));
 
@@ -57,6 +59,12 @@ export default function AvatarCustomizer() {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleDownloadStickers = async () => {
+    setDownloadingStickers(true);
+    await downloadStickerPack(customization, bodyState || 2);
+    setDownloadingStickers(false);
   };
 
   if (loading) {
@@ -153,6 +161,18 @@ export default function AvatarCustomizer() {
             />
           ))}
         </Section>
+      </div>
+
+      {/* Stickers download */}
+      <div className="px-6 mb-6">
+        <button
+          onClick={handleDownloadStickers}
+          disabled={downloadingStickers}
+          className="w-full py-3 rounded-xl border border-heat-amber/30 bg-heat-amber/5 font-display font-bold text-[11px] uppercase tracking-wider text-heat-amber hover:bg-heat-amber/10 transition-colors disabled:opacity-50"
+        >
+          {downloadingStickers ? '⟳ Génération...' : '↓ Télécharger mes stickers'}
+        </button>
+        <div className="font-mono text-[8px] text-text-muted text-center mt-1.5">5 PNG · 256×256 · Fond transparent</div>
       </div>
 
       {/* Save button */}

@@ -8,6 +8,8 @@ import WeightLineChart from '../components/charts/WeightLineChart';
 import { useAchievements } from '../hooks/useAchievements';
 import { AchievementToastLayer } from '../components/AchievementToast';
 import BodyTransformSVG from '../components/BodyTransformSVG';
+import TransformTimeline from '../components/TransformTimeline';
+import { useAvatarCustomization } from '../hooks/useAvatarCustomization';
 
 function StatBox({ label, value, unit, highlight }) {
   return (
@@ -95,6 +97,7 @@ export default function Corps() {
   const profile = useLiveQuery(getProfile);
   const [measurements, setMeasurements] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const { customization: avatarCustomization } = useAvatarCustomization();
   const { checkMinus5kg, checkPhase1, recentUnlocks } = useAchievements();
 
   useEffect(() => {
@@ -205,6 +208,11 @@ export default function Corps() {
             <WeightLineChart weights={weights} targetKg={profile?.poids_cible_kg} trend={trend} />
           </div>
         </div>
+      )}
+
+      {/* Timeline de transformation */}
+      {weights.length >= 2 && (
+        <TransformTimeline weights={weights} profile={profile} customization={avatarCustomization} />
       )}
 
       {/* Bouton mesures + formulaire */}
