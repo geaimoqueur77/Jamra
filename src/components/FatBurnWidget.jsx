@@ -105,7 +105,9 @@ export default function FatBurnWidget() {
   const kcalConsumedToday = todayTotals?.kcal || 0;
   const metrics = computeProfileMetrics(profile);
   const tdeeApprox = metrics?.tdee || 2800;
-  const deficitToday = Math.max(0, tdeeApprox - kcalConsumedToday + stravaKcalToday);
+  const deficitToday = kcalConsumedToday > 0
+    ? Math.max(0, tdeeApprox - kcalConsumedToday + stravaKcalToday)
+    : targetKcal + stravaKcalToday;
   const grasPerduAujourdhui = deficitToday / KCAL_PER_GRAM_FAT;
 
   // Déficit cette semaine (7 jours de déficit × moyenne)

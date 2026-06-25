@@ -3,10 +3,11 @@
  */
 
 export default function ProgressRing({
-  value = 0,              // 0 → 1 (ratio de progression)
+  value = 0,
   size = 220,
   strokeWidth = 14,
-  children,               // contenu affiché au centre
+  variant = 'heat',     // 'heat' | 'neutral'
+  children,
   className = '',
 }) {
   const radius = (size - strokeWidth) / 2 - 1;
@@ -15,6 +16,7 @@ export default function ProgressRing({
   const offset = circumference * (1 - clamped);
 
   const gradId = `ring-grad-${Math.random().toString(36).slice(2, 9)}`;
+  const isNeutral = variant === 'neutral';
 
   return (
     <div
@@ -26,15 +28,17 @@ export default function ProgressRing({
         height={size}
         viewBox={`0 0 ${size} ${size}`}
         className="-rotate-90"
-        style={{ filter: 'drop-shadow(0 0 8px rgba(255, 77, 0, 0.35))' }}
+        style={{ filter: isNeutral ? 'none' : 'drop-shadow(0 0 8px rgba(255, 77, 0, 0.35))' }}
       >
-        <defs>
-          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FFAA33" />
-            <stop offset="50%" stopColor="#FF4D00" />
-            <stop offset="100%" stopColor="#FF1744" />
-          </linearGradient>
-        </defs>
+        {!isNeutral && (
+          <defs>
+            <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FFAA33" />
+              <stop offset="50%" stopColor="#FF4D00" />
+              <stop offset="100%" stopColor="#FF1744" />
+            </linearGradient>
+          </defs>
+        )}
 
         {/* Track */}
         <circle
@@ -51,7 +55,7 @@ export default function ProgressRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={`url(#${gradId})`}
+          stroke={isNeutral ? '#2a2825' : `url(#${gradId})`}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}

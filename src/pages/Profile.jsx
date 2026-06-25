@@ -89,7 +89,13 @@ function StravaSection({ userId }) {
   };
 
   const lastSync = connection?.last_synced_at
-    ? new Date(connection.last_synced_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    ? (() => {
+        const diff = Math.floor((Date.now() - new Date(connection.last_synced_at)) / 60000);
+        if (diff < 1) return 'à l\'instant';
+        if (diff < 60) return `il y a ${diff} min`;
+        if (diff < 1440) return `il y a ${Math.floor(diff / 60)}h`;
+        return new Date(connection.last_synced_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      })()
     : null;
 
   return (
@@ -178,17 +184,19 @@ function AchievementsSection({ userId }) {
           return (
             <div
               key={ach.key}
-              className={`flex flex-col items-center text-center p-3 rounded-xl border ${done ? 'border-heat-orange/30 bg-heat-orange/5' : 'border-subtle bg-bg-surface1 opacity-40'}`}
+              className={`flex flex-col items-center text-center p-3 rounded-[14px] border transition-all ${done ? 'border-heat-orange/30 bg-heat-orange/5' : 'border-white/5 bg-bg-surface1 opacity-40'}`}
             >
-              <span className="text-2xl mb-1">{ach.icon}</span>
+              <span className="text-xl mb-1.5">{ach.icon}</span>
               <div className={`font-display font-bold text-[10px] uppercase tracking-wide leading-tight ${done ? 'text-heat-orange' : 'text-text-tertiary'}`}>
                 {ach.label}
               </div>
-              {done && ua?.unlocked_at && (
-                <div className="font-mono text-[9px] text-text-tertiary mt-1">
+              {done && ua?.unlocked_at ? (
+                <div className="font-mono text-[8px] text-text-tertiary mt-1">
                   {new Date(ua.unlocked_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                 </div>
-              )}
+              ) : !done ? (
+                <div className="font-mono text-[8px] text-text-muted mt-1">🔒</div>
+              ) : null}
             </div>
           );
         })}
@@ -346,7 +354,7 @@ export default function Profile() {
     <div>
       <Header variant="centered" title="Profil" />
 
-      <div className="px-6 py-4 flex flex-col gap-4">
+      <div className="px-4 py-4 flex flex-col gap-4">
 
         {/* Greeting */}
         <div className="py-2">

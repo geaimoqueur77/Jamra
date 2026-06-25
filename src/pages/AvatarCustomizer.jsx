@@ -35,10 +35,8 @@ function OptionPill({ option, selected, unlocked, unlockLabel, onClick }) {
 function Section({ title, children }) {
   return (
     <div className="mb-5">
-      <div className="font-display font-bold text-[10px] uppercase tracking-[0.18em] text-text-tertiary mb-2">
-        {title}
-      </div>
-      <div className="flex flex-wrap gap-2">{children}</div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-text-tertiary mb-2">{title}</div>
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>{children}</div>
     </div>
   );
 }
@@ -80,85 +78,45 @@ export default function AvatarCustomizer() {
       <Header variant="back" onBack={() => navigate(-1)} eyebrow="PROFIL" title="Mon avatar" />
 
       {/* Preview */}
-      <div className="flex justify-center py-6 px-6">
-        <div className="rounded-2xl border border-subtle" style={{ background: '#070405', overflow: 'visible' }}>
+      <div className="flex justify-center py-8 px-6" style={{ overflow: 'visible' }}>
+        <div
+          className="rounded-2xl border border-white/5 flex items-end justify-center"
+          style={{ background: '#070405', overflow: 'visible', width: 180, height: 280 }}
+        >
           <AvatarPreview bodyState={bodyState || 2} customization={customization} size={180} />
         </div>
       </div>
 
       {/* Options */}
       <div className="px-6">
-        <Section title="Apparence">
-          <div className="w-full mb-2">
-            <div className="font-mono text-[9px] uppercase tracking-wider text-text-muted mb-1.5">Peau</div>
-            <div className="flex flex-wrap gap-2">
-              {CUSTOMIZATION_OPTIONS.skin.map(opt => (
-                <OptionPill
-                  key={opt.id}
-                  option={opt}
-                  selected={customization.skin === opt.id}
-                  unlocked={isUnlocked(opt)}
-                  unlockLabel={unlockLabel(opt)}
-                  onClick={() => set('skin', opt.id)}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="w-full mb-2">
-            <div className="font-mono text-[9px] uppercase tracking-wider text-text-muted mb-1.5">Cheveux</div>
-            <div className="flex flex-wrap gap-2">
-              {CUSTOMIZATION_OPTIONS.hair.map(opt => (
-                <OptionPill
-                  key={opt.id}
-                  option={opt}
-                  selected={customization.hair === opt.id}
-                  unlocked={isUnlocked(opt)}
-                  unlockLabel={unlockLabel(opt)}
-                  onClick={() => set('hair', opt.id)}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="w-full">
-            <div className="font-mono text-[9px] uppercase tracking-wider text-text-muted mb-1.5">Lunettes</div>
-            <div className="flex flex-wrap gap-2">
-              {CUSTOMIZATION_OPTIONS.glasses.map(opt => (
-                <OptionPill
-                  key={opt.id}
-                  option={opt}
-                  selected={customization.glasses === opt.id}
-                  unlocked={isUnlocked(opt)}
-                  unlockLabel={unlockLabel(opt)}
-                  onClick={() => set('glasses', opt.id)}
-                />
-              ))}
-            </div>
-          </div>
-        </Section>
-
-        <Section title="Tenue">
-          {CUSTOMIZATION_OPTIONS.outfit.map(opt => (
-            <OptionPill
-              key={opt.id}
-              option={opt}
-              selected={customization.outfit === opt.id}
-              unlocked={isUnlocked(opt)}
-              unlockLabel={unlockLabel(opt)}
-              onClick={() => set('outfit', opt.id)}
-            />
+        <Section title="Peau">
+          {CUSTOMIZATION_OPTIONS.skin.map(opt => (
+            <OptionPill key={opt.id} option={opt} selected={customization.skin === opt.id}
+              unlocked={isUnlocked(opt)} unlockLabel={unlockLabel(opt)} onClick={() => set('skin', opt.id)} />
           ))}
         </Section>
-
+        <Section title="Cheveux">
+          {CUSTOMIZATION_OPTIONS.hair.map(opt => (
+            <OptionPill key={opt.id} option={opt} selected={customization.hair === opt.id}
+              unlocked={isUnlocked(opt)} unlockLabel={unlockLabel(opt)} onClick={() => set('hair', opt.id)} />
+          ))}
+        </Section>
+        <Section title="Lunettes">
+          {CUSTOMIZATION_OPTIONS.glasses.map(opt => (
+            <OptionPill key={opt.id} option={opt} selected={customization.glasses === opt.id}
+              unlocked={isUnlocked(opt)} unlockLabel={unlockLabel(opt)} onClick={() => set('glasses', opt.id)} />
+          ))}
+        </Section>
+        <Section title="Tenue">
+          {CUSTOMIZATION_OPTIONS.outfit.map(opt => (
+            <OptionPill key={opt.id} option={opt} selected={customization.outfit === opt.id}
+              unlocked={isUnlocked(opt)} unlockLabel={unlockLabel(opt)} onClick={() => set('outfit', opt.id)} />
+          ))}
+        </Section>
         <Section title="Chaussures">
           {CUSTOMIZATION_OPTIONS.shoes.map(opt => (
-            <OptionPill
-              key={opt.id}
-              option={opt}
-              selected={customization.shoes === opt.id}
-              unlocked={isUnlocked(opt)}
-              unlockLabel={unlockLabel(opt)}
-              onClick={() => set('shoes', opt.id)}
-            />
+            <OptionPill key={opt.id} option={opt} selected={customization.shoes === opt.id}
+              unlocked={isUnlocked(opt)} unlockLabel={unlockLabel(opt)} onClick={() => set('shoes', opt.id)} />
           ))}
         </Section>
       </div>

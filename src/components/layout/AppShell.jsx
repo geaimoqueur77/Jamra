@@ -12,12 +12,14 @@ export default function AppShell() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-dvh flex flex-col relative">
-      <main className="flex-1 pb-[110px]">
-        <Outlet />
-      </main>
-      <FAB onClick={() => navigate('/ajout')} ariaLabel="Ajouter un repas" />
-      <BottomNav />
+    <div className="min-h-dvh bg-black flex justify-center">
+      <div className="w-full max-w-2xl relative bg-[#0A0908] min-h-dvh flex flex-col">
+        <main className="flex-1 pb-[110px]">
+          <Outlet />
+        </main>
+        <FAB onClick={() => navigate('/ajout')} ariaLabel="Ajouter un repas" />
+        <BottomNav />
+      </div>
     </div>
   );
 }

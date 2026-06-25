@@ -164,31 +164,31 @@ function RestTimer({ seconds, onDone }) {
   const circ = 2 * Math.PI * r;
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-heat-orange/10 border border-heat-orange/25">
-      <svg width="64" height="64" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,77,0,0.15)" strokeWidth="4" />
+    <div className="flex flex-col items-center gap-3 px-6 py-5 rounded-[20px] bg-heat-orange/10 border border-heat-orange/25">
+      <svg width="88" height="88" viewBox="0 0 88 88">
+        <circle cx="44" cy="44" r="38" fill="none" stroke="rgba(255,77,0,0.12)" strokeWidth="5" />
         <circle
-          cx="32" cy="32" r={r} fill="none"
-          stroke="#FF4D00" strokeWidth="4"
+          cx="44" cy="44" r="38" fill="none"
+          stroke="#FF4D00" strokeWidth="5"
           strokeLinecap="round"
-          strokeDasharray={circ}
-          strokeDashoffset={circ * (1 - pct)}
-          transform="rotate(-90 32 32)"
+          strokeDasharray={2 * Math.PI * 38}
+          strokeDashoffset={2 * Math.PI * 38 * (1 - pct)}
+          transform="rotate(-90 44 44)"
           style={{ transition: 'stroke-dashoffset 0.2s linear' }}
         />
-        <text x="32" y="37" textAnchor="middle" fontSize="14" fontFamily="ui-monospace,monospace" fill="#FF4D00" fontWeight="bold">
+        <text x="44" y="50" textAnchor="middle" fontSize="20" fontFamily="ui-monospace,monospace" fill="#FF4D00" fontWeight="bold">
           {remaining}s
         </text>
       </svg>
-      <div>
+      <div className="text-center">
         <div className="font-display font-bold text-[13px] text-heat-orange uppercase tracking-wide">Repos</div>
         <div className="font-mono text-[10px] text-text-tertiary mt-0.5">Prépare la prochaine série</div>
       </div>
       <button
         onClick={onDone}
-        className="ml-auto font-display font-bold text-[11px] uppercase tracking-wider text-text-tertiary hover:text-text-primary transition-colors"
+        className="font-display font-bold text-[11px] uppercase tracking-wider text-text-tertiary hover:text-text-primary active:scale-95 transition-all"
       >
-        Skip
+        Passer
       </button>
     </div>
   );
@@ -196,7 +196,10 @@ function RestTimer({ seconds, onDone }) {
 
 function PRBadge() {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-heat-orange/15 border border-heat-orange/30 font-display font-bold text-[10px] text-heat-orange uppercase tracking-wide">
+    <span
+      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-heat-orange/15 border border-heat-orange/30 font-display font-bold text-[10px] text-heat-orange uppercase tracking-wide"
+      style={{ animation: 'jmrPulse 1.2s infinite' }}
+    >
       PR 🔥
     </span>
   );
@@ -220,7 +223,7 @@ function TypeSelectView({ onSelect }) {
           <button
             key={key}
             onClick={() => onSelect(key)}
-            className="w-full rounded-2xl border border-subtle bg-bg-surface1 p-5 text-left hover:border-heat-orange/40 hover:bg-heat-orange/5 transition-all"
+            className="w-full rounded-[20px] border border-white/5 bg-bg-surface1 p-5 text-left hover:border-heat-orange/30 hover:bg-heat-orange/5 active:scale-[0.98] transition-all duration-150"
           >
             <div className="font-display font-bold text-2xl uppercase tracking-wide text-text-primary mb-1">
               {label}
@@ -644,44 +647,53 @@ function SummaryView({ type, sessionId, userId, duration, savedSets, prMap, onCl
       </div>
 
       {/* Stats */}
-      <div className="rounded-2xl border border-subtle bg-bg-surface1 p-5 mb-4">
-        <div className="flex justify-around">
-          <div className="text-center">
-            <div className="font-display font-bold text-2xl text-heat-orange">
-              {Math.round(totalVolume).toLocaleString('fr-FR')}
-            </div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Kg volume</div>
+      <div className="rounded-[20px] border border-white/5 bg-bg-surface1 p-5 mb-4">
+        <div className="text-center mb-4">
+          <div className="font-display font-extrabold text-[42px] leading-none text-heat-gradient">
+            {Math.round(totalVolume).toLocaleString('fr-FR')}
           </div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.15em] text-text-tertiary mt-1">kg volume total</div>
           {diff != null && (
+            <div className={`font-display font-bold text-[15px] mt-2 ${diff >= 0 ? 'text-success' : 'text-danger'}`}>
+              {diff >= 0 ? `+${diff} kg` : `${diff} kg`}
+              <span className="font-mono text-[10px] text-text-tertiary ml-2 font-normal">vs dernière fois</span>
+            </div>
+          )}
+        </div>
+        <div className="flex gap-4 pt-4 border-t border-white/5">
+          <div className="flex-1 text-center">
+            <div className="font-display font-bold text-xl text-heat-amber">
+              {Object.keys(savedSets).filter(k => k !== '_userId').length}
+            </div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-text-tertiary mt-0.5">Exercices</div>
+          </div>
+          {prs.length > 0 && (
             <>
-              <div className="w-px bg-subtle" />
-              <div className="text-center">
-                <div className={`font-display font-bold text-2xl ${diff >= 0 ? 'text-success' : 'text-danger'}`}>
-                  {diff >= 0 ? `+${diff}` : diff}
-                </div>
-                <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">vs dernière fois</div>
+              <div className="w-px bg-white/5" />
+              <div className="flex-1 text-center">
+                <div className="font-display font-bold text-xl text-heat-orange">{prs.length}</div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.12em] text-text-tertiary mt-0.5">Records</div>
               </div>
             </>
           )}
-          <div className="w-px bg-subtle" />
-          <div className="text-center">
-            <div className="font-display font-bold text-2xl text-heat-amber">
-              {Object.keys(savedSets).filter(k => k !== '_userId').length}
-            </div>
-            <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Exercices</div>
-          </div>
         </div>
       </div>
 
       {/* PRs */}
       {prs.length > 0 && (
-        <div className="rounded-2xl border border-heat-orange/25 bg-heat-orange/5 p-4 mb-4">
-          <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-heat-orange mb-3">
-            🔥 Records personnels
+        <div className="rounded-[20px] border border-heat-orange/25 bg-heat-orange/5 p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span style={{ animation: 'jmrPulse 1.2s infinite' }}>🔥</span>
+            <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-heat-orange">
+              Records personnels
+            </div>
           </div>
           {prs.map((pr, i) => (
-            <div key={i} className="font-mono text-[12px] text-text-primary">
-              {pr.exercise_name} — {pr.weight_kg}kg × {pr.reps} reps
+            <div key={i} className="flex items-center justify-between py-2 border-t border-heat-orange/10 first:border-t-0">
+              <div className="font-body text-[13px] text-text-primary truncate flex-1 mr-3">{pr.exercise_name}</div>
+              <div className="font-mono text-[12px] font-bold text-heat-amber shrink-0">
+                {pr.weight_kg} kg × {pr.reps}
+              </div>
             </div>
           ))}
         </div>

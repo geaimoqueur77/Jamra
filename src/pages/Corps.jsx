@@ -22,9 +22,9 @@ function StatBox({ label, value, unit, highlight }) {
   );
 }
 
-function MeasurementForm({ onSaved }) {
+function MeasurementFormSheet({ onSaved, onClose }) {
   const today = todayISO();
-  const [form, setForm] = useState({ weight_kg: '', waist_cm: '', arm_cm: '', chest_cm: '', thigh_cm: '', notes: '' });
+  const [form, setForm] = useState({ weight_kg: '', waist_cm: '', arm_cm: '', chest_cm: '', thigh_cm: '' });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -41,7 +41,6 @@ function MeasurementForm({ onSaved }) {
       arm_cm: parseFloat(form.arm_cm) || null,
       chest_cm: parseFloat(form.chest_cm) || null,
       thigh_cm: parseFloat(form.thigh_cm) || null,
-      notes: form.notes || null,
     };
     await supabase.from('body_measurements').upsert(payload, { onConflict: 'user_id,date' });
     if (form.weight_kg) await addOrUpdateWeight({ date: today, poids_kg: parseFloat(form.weight_kg) });
@@ -50,43 +49,48 @@ function MeasurementForm({ onSaved }) {
   };
 
   const fields = [
-    { key: 'weight_kg', label: 'Poids', unit: 'kg', inputMode: 'decimal' },
-    { key: 'waist_cm', label: 'Tour de taille', unit: 'cm', inputMode: 'decimal' },
-    { key: 'arm_cm', label: 'Bras (bicep)', unit: 'cm', inputMode: 'decimal' },
-    { key: 'chest_cm', label: 'Poitrine', unit: 'cm', inputMode: 'decimal' },
-    { key: 'thigh_cm', label: 'Cuisse', unit: 'cm', inputMode: 'decimal' },
+    { key: 'weight_kg', label: 'Poids', unit: 'kg' },
+    { key: 'waist_cm', label: 'Tour de taille', unit: 'cm' },
+    { key: 'arm_cm', label: 'Bras', unit: 'cm' },
+    { key: 'chest_cm', label: 'Poitrine', unit: 'cm' },
+    { key: 'thigh_cm', label: 'Cuisse', unit: 'cm' },
   ];
 
   return (
-    <div className="rounded-2xl border border-subtle bg-bg-surface1 p-5 mb-5">
-      <div className="font-display font-bold text-[12px] uppercase tracking-[0.14em] text-text-tertiary mb-4">
-        Mesures du jour
-      </div>
-      <div className="flex flex-col gap-3">
-        {fields.map(({ key, label, unit, inputMode }) => (
-          <div key={key} className="flex items-center gap-3">
-            <div className="flex-1 font-body text-[13px] text-text-secondary">{label}</div>
-            <div className="flex items-center gap-1.5">
-              <input
-                type="number"
-                inputMode={inputMode}
-                placeholder="—"
-                value={form[key]}
-                onChange={e => set(key, e.target.value)}
-                className="w-20 bg-bg-surface2 border border-subtle rounded-lg px-3 py-2 font-mono text-[13px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none text-right transition-colors"
-              />
-              <span className="font-mono text-[10px] text-text-tertiary w-5">{unit}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <button
-        onClick={handleSave}
-        disabled={!form.weight_kg || saving}
-        className="mt-4 w-full py-3 rounded-xl bg-heat-orange font-display font-bold text-[13px] uppercase tracking-wide text-white disabled:opacity-40 transition-opacity"
+    <div className="fixed inset-0 z-50 flex items-end" style={{ background: 'rgba(0,0,0,0.7)' }} onClick={onClose}>
+      <div
+        className="w-full max-w-2xl mx-auto rounded-t-3xl border-t border-white/10 pb-10 pt-6 px-6"
+        style={{ background: '#0A0908', transition: 'transform 300ms cubic-bezier(0.32,0.72,0,1)' }}
+        onClick={e => e.stopPropagation()}
       >
-        {saving ? 'Enregistrement...' : 'Enregistrer'}
-      </button>
+        <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-6" />
+        <div className="font-display font-bold text-lg text-text-primary mb-5">Mesures du jour</div>
+        <div className="flex flex-col gap-4 mb-6">
+          {fields.map(({ key, label, unit }) => (
+            <div key={key} className="flex items-center justify-between">
+              <div className="font-body text-[14px] text-text-secondary">{label}</div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="—"
+                  value={form[key]}
+                  onChange={e => set(key, e.target.value)}
+                  className="w-20 bg-bg-surface2 border border-white/10 rounded-xl px-3 py-2.5 font-mono text-[14px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none text-right transition-colors"
+                />
+                <span className="font-mono text-[11px] text-text-tertiary w-6">{unit}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={!form.weight_kg || saving}
+          className="w-full py-4 rounded-2xl bg-heat-orange font-display font-bold text-[14px] uppercase tracking-wider text-white disabled:opacity-40 active:scale-[0.98] transition-all"
+        >
+          {saving ? 'Enregistrement...' : 'Enregistrer'}
+        </button>
+      </div>
     </div>
   );
 }
@@ -137,59 +141,72 @@ export default function Corps() {
   };
 
   return (
+    <>
     <div>
       <Header variant="greeting" eyebrow="SUIVI" title="Corps" />
 
-      {/* Snapshot actuel */}
-      <div className="px-6 py-5">
-        <div className="rounded-2xl border border-subtle bg-bg-surface1 p-5">
+      {/* Snapshot actuel — grille 2×2 */}
+      <div className="px-4 py-4">
+        <div className="rounded-[20px] border border-white/5 bg-bg-surface1 p-5">
           <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary mb-4">
             Maintenant
           </div>
-          <div className="flex justify-around">
-            <StatBox
-              label="Poids"
-              value={latestWeight?.poids_kg}
-              unit="kg"
-              highlight
-            />
-            {profile?.poids_cible_kg && (
-              <StatBox
-                label="Objectif"
-                value={profile.poids_cible_kg}
-                unit="kg"
-              />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 rounded-xl bg-bg-surface2">
+              <div className="font-display font-bold text-2xl text-heat-orange">
+                {latestWeight?.poids_kg ?? '—'}<span className="font-mono text-[12px] text-text-tertiary ml-1">kg</span>
+              </div>
+              <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Poids actuel</div>
+            </div>
+            {profile?.poids_cible_kg ? (
+              <div className="text-center p-3 rounded-xl bg-bg-surface2">
+                <div className="font-display font-bold text-2xl text-text-primary">
+                  {profile.poids_cible_kg}<span className="font-mono text-[12px] text-text-tertiary ml-1">kg</span>
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Objectif</div>
+              </div>
+            ) : (
+              <div className="text-center p-3 rounded-xl bg-bg-surface2">
+                <div className="font-display font-bold text-2xl text-text-primary">
+                  {trend ? (
+                    <span className={trend.slopePerWeek < 0 ? 'text-success' : 'text-heat-amber'}>
+                      {trend.slopePerWeek < 0 ? trend.slopePerWeek : `+${trend.slopePerWeek}`}
+                    </span>
+                  ) : '—'}<span className="font-mono text-[12px] text-text-tertiary ml-1">kg/sem</span>
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Tendance</div>
+              </div>
             )}
-            {trend && (
-              <StatBox
-                label={trend.slopePerWeek < 0 ? 'Tendance' : 'Tendance'}
-                value={trend.slopePerWeek < 0 ? trend.slopePerWeek : `+${trend.slopePerWeek}`}
-                unit="kg/sem"
-              />
+            {latestMeasure?.waist_cm && (
+              <div className="text-center p-3 rounded-xl bg-bg-surface2">
+                <div className="font-display font-bold text-2xl text-text-primary">
+                  {latestMeasure.waist_cm}<span className="font-mono text-[12px] text-text-tertiary ml-1">cm</span>
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Tour taille</div>
+              </div>
+            )}
+            {latestMeasure?.arm_cm && (
+              <div className="text-center p-3 rounded-xl bg-bg-surface2">
+                <div className="font-display font-bold text-2xl text-text-primary">
+                  {latestMeasure.arm_cm}<span className="font-mono text-[12px] text-text-tertiary ml-1">cm</span>
+                </div>
+                <div className="font-mono text-[9px] uppercase tracking-[0.15em] text-text-tertiary mt-1">Bras</div>
+              </div>
             )}
           </div>
-          {latestMeasure && (
-            <div className="mt-4 pt-4 border-t border-subtle grid grid-cols-4 gap-2">
-              {[
-                { v: latestMeasure.waist_cm, l: 'Taille', u: 'cm' },
-                { v: latestMeasure.arm_cm,   l: 'Bras',   u: 'cm' },
-                { v: latestMeasure.chest_cm, l: 'Poitrine', u: 'cm' },
-                { v: latestMeasure.thigh_cm, l: 'Cuisse', u: 'cm' },
-              ].map(({ v, l, u }) => (
-                <div key={l} className="text-center">
-                  <div className="font-mono text-[13px] font-bold text-text-primary">
-                    {v ?? '—'}<span className="text-[9px] text-text-tertiary"> {u}</span>
-                  </div>
-                  <div className="font-mono text-[9px] uppercase tracking-wider text-text-tertiary mt-0.5">{l}</div>
-                </div>
-              ))}
+          {trend && profile?.poids_cible_kg && (
+            <div className="mt-3 pt-3 border-t border-white/5 text-center">
+              <span className={`font-display font-bold text-[13px] ${trend.slopePerWeek < 0 ? 'text-success' : 'text-heat-amber'}`}>
+                {trend.slopePerWeek < 0 ? trend.slopePerWeek : `+${trend.slopePerWeek}`} kg/sem
+              </span>
+              <span className="font-mono text-[10px] text-text-tertiary ml-2">tendance</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Transformation corporelle */}
-      <div className="px-6 pb-5">
+      <div className="px-4 pb-4">
         <BodyTransformSVG
           currentPhase={currentPhase}
           poidsDepart={profile?.poids_initial_kg}
@@ -200,11 +217,11 @@ export default function Corps() {
 
       {/* Graphique poids */}
       {weights.length >= 2 && (
-        <div className="px-6 pb-5">
-          <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary mb-3">
+        <div className="px-4 pb-4">
+          <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary mb-3">
             Évolution
           </div>
-          <div className="rounded-2xl border border-subtle bg-bg-surface1 p-4">
+          <div className="rounded-[20px] border border-white/5 bg-bg-surface1 p-4">
             <WeightLineChart weights={weights} targetKg={profile?.poids_cible_kg} trend={trend} />
           </div>
         </div>
@@ -215,37 +232,33 @@ export default function Corps() {
         <TransformTimeline weights={weights} profile={profile} customization={avatarCustomization} />
       )}
 
-      {/* Bouton mesures + formulaire */}
-      <div className="px-6 pb-32">
-        {showForm ? (
-          <MeasurementForm onSaved={handleSaved} />
-        ) : (
-          <button
-            onClick={() => setShowForm(true)}
-            className="w-full py-3.5 rounded-xl border border-dashed border-strong text-text-secondary hover:border-heat-orange hover:text-heat-orange font-display font-bold text-[12px] uppercase tracking-wider transition-colors mb-5"
-          >
-            + Saisir les mesures du jour
-          </button>
-        )}
+      {/* Bouton mesures */}
+      <div className="px-4 pb-32">
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full py-4 rounded-[20px] border border-dashed border-white/15 text-text-secondary hover:border-heat-orange hover:text-heat-orange font-display font-bold text-[12px] uppercase tracking-wider active:scale-[0.98] transition-all mb-5"
+        >
+          + Saisir les mesures du jour
+        </button>
 
         {/* Historique mesures */}
         {measurements.length > 0 && (
           <>
-            <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary mb-3">
-              Historique
+            <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary mb-3">
+              Historique mesures
             </div>
             {measurements.slice(0, 10).map(m => {
               const d = new Date(m.date + 'T12:00:00');
               const dateStr = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
               return (
-                <div key={m.id} className="flex items-center justify-between py-3 border-b border-subtle">
+                <div key={m.id} className="flex items-center justify-between py-3 border-b border-white/5">
                   <div className="font-mono text-[11px] text-text-tertiary">{dateStr}</div>
                   <div className="flex gap-4">
                     {m.weight_kg && (
                       <span className="font-mono text-[12px] text-text-primary font-bold">{m.weight_kg} kg</span>
                     )}
                     {m.waist_cm && (
-                      <span className="font-mono text-[11px] text-text-secondary">↔ {m.waist_cm}</span>
+                      <span className="font-mono text-[11px] text-text-secondary">↔ {m.waist_cm} cm</span>
                     )}
                   </div>
                 </div>
@@ -256,5 +269,9 @@ export default function Corps() {
       </div>
       <AchievementToastLayer unlocks={recentUnlocks} onDismiss={() => {}} />
     </div>
+    {showForm && (
+      <MeasurementFormSheet onSaved={handleSaved} onClose={() => setShowForm(false)} />
+    )}
+  </>
   );
 }

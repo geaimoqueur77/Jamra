@@ -170,7 +170,7 @@ function WeekSportSummary({ userId, today }) {
   if (!stats.sessions && !stats.kmRun) return null;
 
   return (
-    <div className="mx-6 mb-1 rounded-2xl border border-subtle bg-bg-surface1 p-4">
+    <div className="mx-4 rounded-[20px] border border-white/5 bg-bg-surface1 p-4">
       <div className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary mb-3">
         Cette semaine
       </div>
@@ -287,7 +287,7 @@ function TonightSessionWidget({ userId, onStartSession }) {
   });
 
   return (
-    <div className="mx-6 mb-1 rounded-2xl border border-subtle bg-bg-surface1 overflow-hidden">
+    <div className="mx-4 rounded-[20px] border border-white/5 bg-bg-surface1 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-subtle">
         <div>
@@ -639,10 +639,10 @@ function CoachChatWidget({ userId }) {
   };
 
   return (
-    <div className="mx-6 mb-1">
+    <div className="rounded-[20px] border border-white/5 bg-bg-surface1 p-4">
       {/* Historique */}
       {history.length > 0 && (
-        <div className="mb-3 flex flex-col gap-2">
+        <div className="mb-3 flex flex-col gap-2 max-h-48 overflow-y-auto">
           {history.slice(-MAX_HISTORY * 2).map((msg, i) => (
             <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
@@ -673,7 +673,7 @@ function CoachChatWidget({ userId }) {
       )}
 
       {/* Input */}
-      <div className="flex items-center gap-2 rounded-2xl border border-subtle bg-bg-surface1 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-bg-surface2 px-3 py-2">
         <span className="text-base shrink-0">💬</span>
         <input
           ref={inputRef}
@@ -768,10 +768,11 @@ export default function Home() {
 
   if (!profile || !totals || !meals || !metrics || !stats7d) return null;
 
+  const hasLoggedToday = totals.kcal > 0;
   const consumed = totals.kcal;
-  const remaining = Math.max(0, target - consumed);
-  const over = consumed > target ? consumed - target : 0;
-  const ratio = target > 0 ? consumed / target : 0;
+  const remaining = hasLoggedToday ? Math.max(0, target - consumed) : 0;
+  const over = hasLoggedToday && consumed > target ? consumed - target : 0;
+  const ratio = hasLoggedToday && target > 0 ? consumed / target : 0;
 
   const insights = computeInsights({
     profile,
@@ -810,7 +811,7 @@ export default function Home() {
 
       {/* 1 ── AVATAR */}
       {!avatarState.loading && (
-        <div className="px-6 pt-2 pb-1">
+        <div className="px-6 pt-6 pb-2">
           <div className="relative">
             <JamraAvatar
               bodyState={avatarState.bodyState}
@@ -820,11 +821,12 @@ export default function Home() {
               bf={avatarState.bf}
               customization={avatarCustomization}
             />
-            {/* Jamr mascot — état piloté par formeScore */}
+            {/* Jamr mascot — état piloté par formeScore seulement si repas loggés */}
             <div className="absolute bottom-3 left-3" style={{ animation: 'jmrBounce 2s ease-in-out infinite' }}>
               <JamrMascot
                 state={
                   avatarProud ? 'happy'
+                    : !hasLoggedToday ? 'idle'
                     : (avatarState.formeScore ?? 60) > 70 ? 'happy'
                     : (avatarState.formeScore ?? 60) < 40 ? 'sad'
                     : 'idle'
@@ -869,83 +871,104 @@ export default function Home() {
       </div>
 
       {/* 3 ── RING CALORIES */}
-      <div className="px-6 py-7 flex flex-col items-center">
-        <ProgressRing value={ratio} size={220}>
-          <div className="font-display font-extrabold text-[56px] leading-none tracking-tight text-heat-gradient">
-            {formatNumber(consumed)}
-          </div>
-          <div className="font-mono text-xs text-text-tertiary mt-1 tracking-wider">
-            / {formatNumber(target)} kcal
-          </div>
-          <div className="font-body font-semibold text-[11px] uppercase tracking-[0.2em] text-text-secondary mt-2">
-            {over > 0 ? 'Dépassé' : 'Consommées'}
-          </div>
+      <div className="px-6 py-8 flex flex-col items-center">
+        <ProgressRing value={ratio} size={200} variant={hasLoggedToday ? 'heat' : 'neutral'}>
+          {hasLoggedToday ? (
+            <>
+              <div className="font-display font-extrabold text-[52px] leading-none tracking-tight text-heat-gradient">
+                {formatNumber(consumed)}
+              </div>
+              <div className="font-mono text-xs text-text-tertiary mt-1 tracking-wider">
+                / {formatNumber(target)} kcal
+              </div>
+              <div className="font-body font-semibold text-[11px] uppercase tracking-[0.2em] text-text-secondary mt-2">
+                {over > 0 ? 'Dépassé' : 'Consommées'}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="font-mono text-[11px] text-text-muted uppercase tracking-[0.15em] leading-snug px-4 text-center">
+                Non renseigné<br />aujourd'hui
+              </div>
+            </>
+          )}
         </ProgressRing>
-        <div className="flex gap-2 mt-5 w-full max-w-[280px]">
-          <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-            <div className={`font-display font-bold text-lg ${over > 0 ? 'text-danger' : 'text-heat-orange'}`}>
-              {over > 0 ? `+${formatNumber(over)}` : formatNumber(remaining)}
+
+        {!hasLoggedToday && (
+          <div className="mt-3 font-mono text-[9px] text-text-muted tracking-wider text-center">
+            Pas de repas loggé · déficit estimé appliqué
+          </div>
+        )}
+
+        {hasLoggedToday && (
+          <div className="flex gap-2 mt-5 w-full max-w-[280px]">
+            <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+              <div className={`font-display font-bold text-lg ${over > 0 ? 'text-danger' : 'text-heat-orange'}`}>
+                {over > 0 ? `+${formatNumber(over)}` : formatNumber(remaining)}
+              </div>
+              <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">
+                {over > 0 ? 'Surplus' : 'Restant'}
+              </div>
             </div>
-            <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">
-              {over > 0 ? 'Surplus' : 'Restant'}
+            <div className="w-px bg-subtle self-stretch" />
+            <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+              <div className="font-display font-bold text-lg">{formatNumber(metrics.tdee)}</div>
+              <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">Dépense</div>
+            </div>
+            <div className="w-px bg-subtle self-stretch" />
+            <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
+              <div className="font-display font-bold text-lg">−{formatNumber(metrics.deficit_kcal)}</div>
+              <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">Déficit</div>
             </div>
           </div>
-          <div className="w-px bg-subtle self-stretch" />
-          <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-            <div className="font-display font-bold text-lg">{formatNumber(metrics.tdee)}</div>
-            <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">Dépense</div>
-          </div>
-          <div className="w-px bg-subtle self-stretch" />
-          <div className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
-            <div className="font-display font-bold text-lg">−{formatNumber(metrics.deficit_kcal)}</div>
-            <div className="font-mono text-[8px] tracking-tight uppercase text-text-tertiary whitespace-nowrap">Déficit</div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 4 ── WIDGET FONTE */}
-      <div className="px-6 pb-3">
+      <div className="px-4 pb-4">
         <FatBurnWidget />
       </div>
 
-      {/* 5 ── RÉSUMÉ SEMAINE (chips horizontaux) */}
-      <div className="pb-3">
+      {/* 5 ── RÉSUMÉ SEMAINE */}
+      <div className="pb-4">
         <WeekSummaryRow userId={userId} today={today} avgDeficit={avgDeficit} />
       </div>
 
       {/* 6 ── MA SÉANCE CE SOIR */}
-      <div className="pb-1">
+      <div className="pb-4">
         <TonightSessionWidget userId={userId} onStartSession={(type) => setTonightWorkout({ type })} />
       </div>
 
       {/* 7 ── CHAT COACH */}
-      <div className="pt-2 pb-1">
+      <div className="px-4 pb-4">
         <CoachChatWidget userId={userId} />
       </div>
 
       {/* 8 ── BILAN HEBDO (dimanche seulement) */}
-      <div className="pt-2 pb-1">
+      <div className="pb-4">
         <WeeklyDigestCard userId={userId} avatarState={avatarState} avatarCustomization={avatarCustomization} />
       </div>
 
       {/* ── MACROS */}
-      <div className="px-6 py-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary">
-            Macros du jour
+      <div className="px-4 py-4">
+        <div className="rounded-[20px] border border-white/5 bg-bg-surface1 p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary">
+              Macros du jour
+            </div>
+            <div className="font-mono text-[10px] text-text-tertiary tracking-wider">EN GRAMMES</div>
           </div>
-          <div className="font-mono text-[10px] text-text-tertiary tracking-wider">EN GRAMMES</div>
-        </div>
-        <div className="flex flex-col gap-3.5">
-          <MacroRow name="Protéines" current={totals.proteines} target={metrics.proteines_g} delay={100} />
-          <MacroRow name="Glucides"  current={totals.glucides}  target={metrics.glucides_g}  delay={200} />
-          <MacroRow name="Lipides"   current={totals.lipides}   target={metrics.lipides_g}   delay={300} />
-          <MacroRow name="Fibres"    current={totals.fibres}    target={metrics.fibres_g}    delay={400} variant="success" />
+          <div className="flex flex-col gap-3.5">
+            <MacroRow name="Protéines" current={totals.proteines} target={metrics.proteines_g} delay={100} />
+            <MacroRow name="Glucides"  current={totals.glucides}  target={metrics.glucides_g}  delay={200} />
+            <MacroRow name="Lipides"   current={totals.lipides}   target={metrics.lipides_g}   delay={300} />
+            <MacroRow name="Fibres"    current={totals.fibres}    target={metrics.fibres_g}    delay={400} variant="success" />
+          </div>
         </div>
       </div>
 
       {/* ── REPAS */}
-      <div className="px-6 py-5">
+      <div className="px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="font-display font-bold text-[13px] uppercase tracking-[0.12em] text-text-secondary">
             Repas
