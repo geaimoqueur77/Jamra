@@ -8,9 +8,9 @@ import ExerciseProgressModal from './sport/ExerciseProgressModal';
 import ExpressWorkout, { syncOfflineSessions, getOfflineSessions } from './sport/ExpressWorkout';
 import { exportWorkoutSummary } from '../utils/exportWorkout';
 
-const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
-const TYPE_COLORS = { push: 'text-heat-orange', pull: 'text-heat-amber', legs: 'text-success' };
-const TYPE_BG    = { push: 'bg-heat-orange/10 border-heat-orange/30', pull: 'bg-heat-amber/10 border-heat-amber/30', legs: 'bg-success/10 border-success/30' };
+const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs', libre: 'Libre' };
+const TYPE_COLORS = { push: 'text-heat-orange', pull: 'text-heat-amber', legs: 'text-success', libre: 'text-violet-400' };
+const TYPE_BG    = { push: 'bg-heat-orange/10 border-heat-orange/30', pull: 'bg-heat-amber/10 border-heat-amber/30', legs: 'bg-success/10 border-success/30', libre: 'bg-violet-500/10 border-violet-500/30' };
 
 function relativeDate(dateStr) {
   const d = new Date(dateStr.includes('T') ? dateStr : dateStr + 'T12:00:00');
@@ -180,7 +180,7 @@ function DeleteConfirmSheet({ session, onConfirm, onClose }) {
             Supprimer cette séance ?
           </div>
           <div className="font-mono text-[11px] text-text-tertiary">
-            {TYPE_LABELS[session.type]} · {relativeDate(session.date)}
+            {session.custom_label || TYPE_LABELS[session.type] || session.type} · {relativeDate(session.date)}
             {session.duration_min ? ` · ${session.duration_min} min` : ''}
           </div>
           <div className="font-mono text-[10px] text-danger mt-2">
@@ -257,7 +257,7 @@ function EditSessionSheet({ session, onSaved, onClose }) {
         <div className="w-10 h-1 rounded-full bg-white/20 mx-auto mb-4" />
         <div className="px-6 pb-3 border-b border-white/5">
           <div className="font-display font-bold text-lg text-text-primary">
-            Modifier · {TYPE_LABELS[session.type]}
+            Modifier · {session.custom_label || TYPE_LABELS[session.type] || session.type}
           </div>
           <div className="font-mono text-[10px] text-text-tertiary mt-0.5">{relativeDate(session.date)}</div>
         </div>
@@ -349,16 +349,21 @@ function SessionCard({ session, onPress, onEdit, onDelete }) {
     >
       <div className="flex items-center justify-between" onClick={() => onPress(session)}>
         <div className="flex items-center gap-3">
-          <div className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold uppercase ${TYPE_BG[typeKey]}`}>
-            <span className={TYPE_COLORS[typeKey]}>{TYPE_LABELS[typeKey] || typeKey}</span>
+          <div className={`px-2.5 py-1 rounded-lg border text-[10px] font-mono font-bold uppercase ${TYPE_BG[typeKey] || TYPE_BG.push}`}>
+            <span className={TYPE_COLORS[typeKey] || TYPE_COLORS.push}>
+              {typeKey === 'libre' ? '✦ LIBRE' : (TYPE_LABELS[typeKey] || typeKey)}
+            </span>
           </div>
           <div>
             <div className="font-display font-bold text-[14px] text-text-primary">
-              {relativeDate(session.date)}
+              {typeKey === 'libre' && session.custom_label
+                ? session.custom_label
+                : relativeDate(session.date)}
             </div>
             <div className="font-mono text-[9px] text-text-tertiary mt-0.5">
+              {typeKey === 'libre' && session.custom_label ? `${relativeDate(session.date)} · ` : ''}
               {session.duration_min ? `${session.duration_min} min` : 'Durée inconnue'}
-              {totalSets ? ` · ${totalSets} séries` : ''}
+              {session._volume > 0 ? ` · ${session._volume.toLocaleString('fr-FR')} kg` : totalSets ? ` · ${totalSets} séries` : ''}
             </div>
           </div>
         </div>
@@ -458,7 +463,7 @@ function SessionExercisePicker({ session, userId, onSelectExercise, onClose }) {
         <div className="flex items-center justify-between px-6 mb-4">
           <div>
             <div className="font-display font-bold text-[15px] text-text-primary">
-              {TYPE_LABELS[session.type]} · {relativeDate(session.date)}
+              {session.custom_label || TYPE_LABELS[session.type] || session.type} · {relativeDate(session.date)}
             </div>
             <div className="font-mono text-[10px] text-text-tertiary mt-0.5">Voir la progression d'un exercice</div>
           </div>
@@ -524,7 +529,20 @@ export default function Sport() {
       .eq('user_id', user.id)
       .order('date', { ascending: false })
       .limit(30);
-    setSessions(data || []);
+
+    if (!data?.length) { setSessions([]); setLoading(false); return; }
+
+    const { data: setsData } = await supabase
+      .from('workout_sets')
+      .select('session_id, weight_kg, reps')
+      .in('session_id', data.map(s => s.id));
+
+    const volumeMap = {};
+    (setsData || []).forEach(s => {
+      volumeMap[s.session_id] = (volumeMap[s.session_id] || 0) + (s.weight_kg || 0) * (s.reps || 0);
+    });
+
+    setSessions(data.map(s => ({ ...s, _volume: Math.round(volumeMap[s.id] || 0) })));
     setLoading(false);
   }, []);
 

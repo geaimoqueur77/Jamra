@@ -33,7 +33,7 @@ const PPL_PLAN = {
   ],
 };
 
-const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
+const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs', libre: 'Libre' };
 const REST_DURATION = 90; // secondes
 
 // Exercices bonus optionnels (section séparée, toujours accessibles)
@@ -59,6 +59,32 @@ const PPL_BONUS = {
     { fr: 'Step-ups',           en: 'dumbbell step up',   muscle: 'Jambes',                secondary: 'Fonctionnel' },
   ],
 };
+
+// Tous les exercices disponibles (PPL plan + bonus, dédupliqués)
+const ALL_EXERCISES = [
+  ...Object.values(PPL_PLAN).flat(),
+  ...Object.values(PPL_BONUS).flat(),
+].filter((ex, idx, arr) => arr.findIndex(e => e.fr === ex.fr) === idx);
+
+const MUSCLE_GROUPS = [
+  { id: 'all',     label: 'Tous' },
+  { id: 'pecs',    label: 'Pecs' },
+  { id: 'dos',     label: 'Dos' },
+  { id: 'epaules', label: 'Épaules' },
+  { id: 'bras',    label: 'Bras' },
+  { id: 'jambes',  label: 'Jambes' },
+];
+
+function matchesMuscleGroup(ex, group) {
+  if (group === 'all') return true;
+  const m = (ex.muscle + ' ' + (ex.secondary || '')).toLowerCase();
+  if (group === 'pecs')    return m.includes('pectoral');
+  if (group === 'dos')     return m.includes('dorsal') || m.includes('épaisseur') || m.includes('tirage') || m.includes('rowing') || m.includes('trapèze') || m.includes('rhomboïde');
+  if (group === 'epaules') return m.includes('épaule') || m.includes('deltoïde') || m.includes('face pull');
+  if (group === 'bras')    return m.includes('bicep') || m.includes('tricep') || m.includes('brachial') || m.includes('avant-bras');
+  if (group === 'jambes')  return m.includes('quadricep') || m.includes('fessier') || m.includes('ischio') || m.includes('mollet') || m.includes('abducteur') || m.includes('jambe') || m.includes('hack');
+  return true;
+}
 
 // Paliers poids : 0, 2.5, 5 … 200 kg (81 valeurs)
 const WEIGHT_OPTIONS = Array.from({ length: 81 }, (_, i) => +(i * 2.5).toFixed(1));
@@ -215,23 +241,142 @@ function TypeSelectView({ onSelect }) {
       </div>
       {Object.entries(TYPE_LABELS).map(([key, label]) => {
         const muscles = {
-          push: 'Pectoraux · Épaules · Triceps',
-          pull: 'Dos · Biceps · Trapèzes',
-          legs: 'Quadriceps · Fessiers · Ischio',
+          push:  'Pectoraux · Épaules · Triceps',
+          pull:  'Dos · Biceps · Trapèzes',
+          legs:  'Quadriceps · Fessiers · Ischio',
+          libre: 'Choisis librement tes exercices',
         }[key];
+        const isLibre = key === 'libre';
         return (
           <button
             key={key}
             onClick={() => onSelect(key)}
             className="w-full rounded-[20px] border border-white/5 bg-bg-surface1 p-5 text-left hover:border-heat-orange/30 hover:bg-heat-orange/5 active:scale-[0.98] transition-all duration-150"
           >
-            <div className="font-display font-bold text-2xl uppercase tracking-wide text-text-primary mb-1">
-              {label}
+            <div className="flex items-center gap-2 mb-1">
+              <div className="font-display font-bold text-2xl uppercase tracking-wide text-text-primary">
+                {label}
+              </div>
+              {isLibre && <span className="font-mono text-[16px] text-violet-400">✦</span>}
             </div>
             <div className="font-mono text-[11px] text-text-tertiary tracking-wide">{muscles}</div>
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// ─── Vue : sélection libre des exercices ─────────────────────────────────────
+
+function FreeExerciseSelectView({ exerciseMeta, onStart, onBack }) {
+  const [selected, setSelected] = useState([]);
+  const [search, setSearch] = useState('');
+  const [muscleFilter, setMuscleFilter] = useState('all');
+  const [customLabel, setCustomLabel] = useState('');
+
+  const filtered = ALL_EXERCISES.filter(ex => {
+    const matchSearch = !search || ex.fr.toLowerCase().includes(search.toLowerCase());
+    return matchSearch && matchesMuscleGroup(ex, muscleFilter);
+  });
+
+  const toggle = (ex) => {
+    setSelected(prev => {
+      const exists = prev.find(e => e.fr === ex.fr);
+      return exists ? prev.filter(e => e.fr !== ex.fr) : [...prev, ex];
+    });
+  };
+
+  const isSelected = (ex) => selected.some(e => e.fr === ex.fr);
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Inputs nom + recherche */}
+      <div className="px-5 pt-4 pb-2 space-y-2.5">
+        <input
+          type="text"
+          placeholder="Nom de ta séance (optionnel)"
+          value={customLabel}
+          onChange={e => setCustomLabel(e.target.value)}
+          className="w-full bg-bg-surface1 border border-subtle rounded-xl px-4 py-2.5 font-display font-bold text-[13px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none transition-colors"
+        />
+        <input
+          type="search"
+          placeholder="Rechercher un exercice…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full bg-bg-surface2 border border-subtle rounded-xl px-4 py-2.5 font-mono text-[13px] text-text-primary placeholder-text-muted focus:border-heat-orange/60 focus:outline-none transition-colors"
+        />
+      </div>
+
+      {/* Filtres groupes musculaires */}
+      <div className="flex gap-2 px-5 pb-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+        {MUSCLE_GROUPS.map(g => (
+          <button
+            key={g.id}
+            onClick={() => setMuscleFilter(g.id)}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-mono font-bold transition-all ${
+              muscleFilter === g.id
+                ? 'bg-heat-orange text-white'
+                : 'bg-bg-surface2 text-text-tertiary border border-subtle hover:border-heat-orange/30'
+            }`}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Liste exercices */}
+      <div className="flex-1 overflow-y-auto pb-28">
+        {filtered.length === 0 && (
+          <div className="px-6 py-10 text-center font-mono text-[11px] text-text-muted">Aucun exercice trouvé</div>
+        )}
+        {filtered.map(ex => {
+          const sel = isSelected(ex);
+          const meta = exerciseMeta[ex.fr];
+          return (
+            <button
+              key={ex.fr}
+              onClick={() => toggle(ex)}
+              className={`w-full flex items-center gap-4 px-5 py-3.5 border-b border-subtle text-left transition-colors ${sel ? 'bg-heat-orange/5' : 'hover:bg-bg-surface1'}`}
+            >
+              <div className="w-10 h-10 rounded-lg overflow-hidden bg-bg-surface2 flex items-center justify-center shrink-0">
+                {meta?.gif_cached_url || meta?.gif_url ? (
+                  <img src={meta.gif_cached_url || meta.gif_url} alt={ex.fr} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <span className="font-mono text-[9px] text-text-muted leading-none text-center px-0.5">{ex.muscle.slice(0, 4)}</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-body font-semibold text-[13px] text-text-primary truncate">{ex.fr}</div>
+                <div className="font-mono text-[10px] text-text-tertiary mt-0.5">{ex.muscle}{ex.secondary ? ` · ${ex.secondary}` : ''}</div>
+              </div>
+              <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                sel ? 'bg-heat-orange border-heat-orange' : 'border-white/20'
+              }`}>
+                {sel && (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* CTA Commencer */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-2xl px-5 pb-8 pt-4 bg-gradient-to-t from-[#0A0908] via-[#0A0908]/95 to-transparent">
+        <button
+          onClick={() => selected.length > 0 && onStart(selected, customLabel.trim())}
+          disabled={selected.length === 0}
+          className="w-full py-4 rounded-2xl bg-heat-orange font-display font-bold text-[14px] uppercase tracking-wide text-white hover:bg-[#EA580C] disabled:opacity-30 active:scale-[0.98] transition-all"
+        >
+          {selected.length === 0
+            ? 'Sélectionne des exercices'
+            : `${selected.length} exercice${selected.length > 1 ? 's' : ''} · Commencer →`}
+        </button>
+      </div>
     </div>
   );
 }
@@ -282,12 +427,11 @@ function ExerciseRow({ ex, sessionSets, completedExercises, lastSessionData, exe
   );
 }
 
-function ExerciseListView({ type, sessionSets, exerciseMeta, completedExercises, lastSessionData, onSelectExercise, onFinish }) {
-  const exercises = PPL_PLAN[type];
-  const bonusExercises = PPL_BONUS[type] || [];
+function ExerciseListView({ type, sessionSets, exerciseMeta, completedExercises, lastSessionData, onSelectExercise, onFinish, libreExercises }) {
+  const exercises = libreExercises || PPL_PLAN[type];
+  const bonusExercises = libreExercises ? [] : (PPL_BONUS[type] || []);
   const [showBonus, setShowBonus] = useState(false);
 
-  // Ouvre la section bonus automatiquement si un bonus a déjà des séries
   const hasBonusActivity = bonusExercises.some(ex => (sessionSets[ex.fr] || []).length > 0 || completedExercises.has(ex.fr));
 
   const rowProps = { sessionSets, completedExercises, lastSessionData, exerciseMeta, onSelectExercise };
@@ -302,31 +446,34 @@ function ExerciseListView({ type, sessionSets, exerciseMeta, completedExercises,
 
       {exercises.map(ex => <ExerciseRow key={ex.fr} ex={ex} {...rowProps} />)}
 
-      {/* Section exercices bonus */}
-      <button
-        onClick={() => setShowBonus(v => !v)}
-        className="w-full flex items-center justify-between px-6 py-3.5 border-b border-t border-subtle bg-bg-surface1 hover:bg-bg-surface2 transition-colors"
-      >
-        <div className="flex items-center gap-2">
-          <span className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary">
-            Exercices bonus
-          </span>
-          {hasBonusActivity && (
-            <span className="w-1.5 h-1.5 rounded-full bg-heat-orange" />
-          )}
-          <span className="font-mono text-[10px] text-text-muted">{bonusExercises.length}</span>
-        </div>
-        <svg
-          width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-          className={`text-text-tertiary transition-transform duration-200 ${(showBonus || hasBonusActivity) ? 'rotate-180' : ''}`}
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      {(showBonus || hasBonusActivity) && bonusExercises.map(ex => (
-        <ExerciseRow key={ex.fr} ex={ex} {...rowProps} bonus />
-      ))}
+      {/* Section exercices bonus — masquée pour les séances libres */}
+      {!libreExercises && (
+        <>
+          <button
+            onClick={() => setShowBonus(v => !v)}
+            className="w-full flex items-center justify-between px-6 py-3.5 border-b border-t border-subtle bg-bg-surface1 hover:bg-bg-surface2 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <span className="font-display font-bold text-[11px] uppercase tracking-[0.14em] text-text-tertiary">
+                Exercices bonus
+              </span>
+              {hasBonusActivity && (
+                <span className="w-1.5 h-1.5 rounded-full bg-heat-orange" />
+              )}
+              <span className="font-mono text-[10px] text-text-muted">{bonusExercises.length}</span>
+            </div>
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              className={`text-text-tertiary transition-transform duration-200 ${(showBonus || hasBonusActivity) ? 'rotate-180' : ''}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {(showBonus || hasBonusActivity) && bonusExercises.map(ex => (
+            <ExerciseRow key={ex.fr} ex={ex} {...rowProps} bonus />
+          ))}
+        </>
+      )}
 
       {/* Bouton fin de séance */}
       <div className="fixed bottom-8 left-0 right-0 px-6">
@@ -754,6 +901,8 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
   const [prMap, setPrMap] = useState({});
   const [lastSessionData, setLastSessionData] = useState({});
   const [exerciseMeta, setExerciseMeta] = useState({});
+  const [libreExercises, setLibreExercises] = useState([]);
+  const [sessionCustomLabel, setSessionCustomLabel] = useState('');
 
   // Initialisation user + seed exercises
   useEffect(() => {
@@ -783,12 +932,15 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
     });
   }, []);
 
-  const startSession = async (type) => {
+  const startSession = async (type, customLabel = null, selectedExercises = null) => {
     if (!userId) return;
     const today = new Date().toISOString().slice(0, 10);
+    const insertData = { user_id: userId, date: today, type };
+    if (customLabel) insertData.custom_label = customLabel;
+
     const { data: session } = await supabase
       .from('workout_sessions')
-      .insert({ user_id: userId, date: today, type })
+      .insert(insertData)
       .select()
       .single();
 
@@ -797,12 +949,14 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
     setSessionId(session.id);
     setSessionStart(Date.now());
     setSessionType(type);
+    if (selectedExercises) setLibreExercises(selectedExercises);
+    if (customLabel) setSessionCustomLabel(customLabel);
 
-    // Charge PRs historiques (plan principal + bonus)
-    const exerciseNames = [
-      ...PPL_PLAN[type].map(e => e.fr),
-      ...(PPL_BONUS[type] || []).map(e => e.fr),
-    ];
+    // Charge PRs historiques
+    const exerciseNames = selectedExercises
+      ? selectedExercises.map(e => e.fr)
+      : [...PPL_PLAN[type].map(e => e.fr), ...(PPL_BONUS[type] || []).map(e => e.fr)];
+
     const { data: history } = await supabase
       .from('workout_sets')
       .select('exercise_name, weight_kg')
@@ -898,10 +1052,13 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
   // ─── Render ──────────────────────────────────────────────────────────────
 
   const title = {
-    type_select: 'Nouvelle séance',
-    exercise_list: TYPE_LABELS[sessionType] || 'Séance',
+    type_select:     'Nouvelle séance',
+    libre_select:    'Séance libre ✦',
+    exercise_list:   sessionType === 'libre'
+                       ? (sessionCustomLabel || 'Libre ✦')
+                       : (TYPE_LABELS[sessionType] || 'Séance'),
     exercise_active: activeExercise?.fr || 'Exercice',
-    summary: 'Résumé',
+    summary:         'Résumé',
   }[view];
 
   return (
@@ -910,6 +1067,12 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
         left={
           view === 'exercise_active' ? (
             <button onClick={() => handleExerciseDone(activeExercise?.fr)} className="text-text-tertiary hover:text-text-primary transition-colors">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          ) : view === 'libre_select' ? (
+            <button onClick={() => setView('type_select')} className="text-text-tertiary hover:text-text-primary transition-colors">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
@@ -932,7 +1095,20 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
         }
       />
 
-      {view === 'type_select' && <TypeSelectView onSelect={startSession} />}
+      {view === 'type_select' && (
+        <TypeSelectView onSelect={(type) => {
+          if (type === 'libre') setView('libre_select');
+          else startSession(type);
+        }} />
+      )}
+
+      {view === 'libre_select' && (
+        <FreeExerciseSelectView
+          exerciseMeta={exerciseMeta}
+          onStart={(exercises, label) => startSession('libre', label, exercises)}
+          onBack={() => setView('type_select')}
+        />
+      )}
 
       {view === 'exercise_list' && (
         <ExerciseListView
@@ -943,6 +1119,7 @@ export default function SessionWorkout({ onClose, onCreated, initialType = null 
           lastSessionData={lastSessionData}
           onSelectExercise={(ex) => { setActiveExercise(ex); setView('exercise_active'); }}
           onFinish={handleFinishSession}
+          libreExercises={sessionType === 'libre' ? libreExercises : null}
         />
       )}
 
