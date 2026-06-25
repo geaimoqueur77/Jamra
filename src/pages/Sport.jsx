@@ -6,6 +6,7 @@ import { AchievementToastLayer } from '../components/AchievementToast';
 import SessionWorkout from './sport/SessionWorkout';
 import ExerciseProgressModal from './sport/ExerciseProgressModal';
 import ExpressWorkout, { syncOfflineSessions, getOfflineSessions } from './sport/ExpressWorkout';
+import { exportWorkoutSummary } from '../utils/exportWorkout';
 
 const TYPE_LABELS = { push: 'Push', pull: 'Pull', legs: 'Legs' };
 
@@ -98,6 +99,9 @@ function SessionCard({ session, onPress }) {
 
 function SessionExercisePicker({ session, userId, onSelectExercise, onClose }) {
   const [exercises, setExercises] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [copying, setCopying] = useState(false);
+
   useEffect(() => {
     supabase
       .from('workout_sets')
@@ -108,6 +112,18 @@ function SessionExercisePicker({ session, userId, onSelectExercise, onClose }) {
         setExercises(unique);
       });
   }, [session.id]);
+
+  const handleCopy = async () => {
+    if (copying) return;
+    setCopying(true);
+    try {
+      const summary = await exportWorkoutSummary(session.id);
+      await navigator.clipboard.writeText(JSON.stringify(summary, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+    setCopying(false);
+  };
 
   const d = new Date(session.date + 'T12:00:00');
   const dateStr = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -132,6 +148,7 @@ function SessionExercisePicker({ session, userId, onSelectExercise, onClose }) {
             </svg>
           </button>
         </div>
+
         <div className="px-6 flex flex-col gap-2">
           {exercises.map(name => (
             <button
@@ -142,6 +159,20 @@ function SessionExercisePicker({ session, userId, onSelectExercise, onClose }) {
               {name}
             </button>
           ))}
+        </div>
+
+        <div className="px-6 mt-4">
+          <button
+            onClick={handleCopy}
+            disabled={copying}
+            className={`w-full py-3 rounded-xl border font-display font-bold text-[11px] uppercase tracking-wider transition-colors disabled:opacity-40 ${
+              copied
+                ? 'bg-success/10 border-success/30 text-success'
+                : 'border-subtle bg-bg-surface1 text-text-secondary hover:border-heat-orange/40 hover:text-heat-orange'
+            }`}
+          >
+            {copied ? '✓ Bilan copié' : copying ? 'Export...' : '📋 JSON'}
+          </button>
         </div>
       </div>
     </div>
